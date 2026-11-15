@@ -4,7 +4,7 @@ import {
   CURATED_POPULAR_WORKS,
   selectTimeWindowFeaturedWorks,
 } from '@/lib/mangadex/curatedCatalog';
-import { HeroSectionAnimated } from '@/components/landing/HeroSectionAnimated';
+import { LoggedInHomeHub } from '@/components/landing/LoggedInHomeHub';
 import { FeaturedBillboardSection } from '@/components/landing/FeaturedBillboardSection';
 import { AlternatingVerticalMarquee } from '@/components/landing/AlternatingVerticalMarquee';
 import { BlobatarInteractiveShowcase } from '@/components/landing/BlobatarInteractiveShowcase';
@@ -25,7 +25,7 @@ export default async function HomePage() {
 
   return (
     <div className="relative bg-[#070709] text-white">
-      <HeroSectionAnimated
+      <LoggedInHomeHub
         release={latestRelease}
         showcaseWorks={featuredWindowWorks}
       />

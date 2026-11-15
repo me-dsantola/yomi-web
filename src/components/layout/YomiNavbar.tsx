@@ -11,6 +11,7 @@ import {
   LogOut,
   HardDriveDownload,
   BookOpen,
+  Library,
 } from 'lucide-react';
 import { YomiLogo } from '@/components/brand/YomiLogo';
 import { useYomiAuth } from '@/components/providers/AppProviders';
@@ -24,11 +25,19 @@ interface YomiNavbarProps {
   latestVersion?: string;
 }
 
-const NAV_LINKS = [
+const GUEST_NAV_LINKS = [
   { href: '/#recursos', label: 'Recursos' },
   { href: '/explorar', label: 'Catálogo' },
   { href: '/instalar', label: 'Instalação' },
   { href: '/download', label: 'Novidades' },
+];
+
+const LOGGED_IN_NAV_LINKS = [
+  { href: '/', label: 'Início' },
+  { href: '/explorar', label: 'Catálogo' },
+  { href: '/biblioteca', label: 'Biblioteca' },
+  { href: '/conta', label: 'Meu Perfil' },
+  { href: '/download', label: 'App Android' },
 ];
 
 export function YomiNavbar({ latestVersion = '1.2.8' }: YomiNavbarProps) {
@@ -40,6 +49,8 @@ export function YomiNavbar({ latestVersion = '1.2.8' }: YomiNavbarProps) {
     themePreset,
     setThemePreset,
   } = useYomiAuth();
+
+  const activeNavLinks = user ? LOGGED_IN_NAV_LINKS : GUEST_NAV_LINKS;
 
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -88,9 +99,12 @@ export function YomiNavbar({ latestVersion = '1.2.8' }: YomiNavbarProps) {
               aria-label="Navegação principal"
               className="hidden md:flex items-center gap-1"
             >
-              {NAV_LINKS.map((item) => {
+              {activeNavLinks.map((item) => {
                 const isActive =
-                  item.href !== '/#recursos' && pathname?.startsWith(item.href);
+                  item.href === '/'
+                    ? pathname === '/'
+                    : item.href !== '/#recursos' &&
+                      pathname?.startsWith(item.href);
                 return (
                   <Link
                     key={item.href}
@@ -194,12 +208,20 @@ export function YomiNavbar({ latestVersion = '1.2.8' }: YomiNavbarProps) {
                         </p>
                       </div>
                       <Link
-                        href="/conta"
+                        href="/biblioteca"
                         onClick={() => setUserMenuOpen(false)}
                         className="mt-1 flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-white/85 hover:bg-white/[0.07] hover:text-white"
                       >
+                        <Library className="w-3.5 h-3.5 text-[var(--yomi-accent)]" />
+                        Minha Biblioteca
+                      </Link>
+                      <Link
+                        href="/conta"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-white/85 hover:bg-white/[0.07] hover:text-white"
+                      >
                         <UserIcon className="w-3.5 h-3.5 text-[var(--yomi-accent)]" />
-                        Minha Conta & Nuvem
+                        Meu Perfil & Nuvem
                       </Link>
                       <Link
                         href="/conta/backup"
@@ -269,7 +291,7 @@ export function YomiNavbar({ latestVersion = '1.2.8' }: YomiNavbarProps) {
           <div className="fixed bottom-0 left-0 right-0 rounded-t-3xl border-t border-white/10 bg-[#0E0E14] p-6 shadow-2xl">
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
             <nav className="grid gap-2">
-              {NAV_LINKS.map((item) => (
+              {activeNavLinks.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
@@ -280,14 +302,35 @@ export function YomiNavbar({ latestVersion = '1.2.8' }: YomiNavbarProps) {
                   <span className="text-xs text-white/40">→</span>
                 </Link>
               ))}
-              <Link
-                href="/conta"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between rounded-2xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm font-medium text-white"
-              >
-                <span>Minha Biblioteca</span>
-                <BookOpen className="w-4 h-4 text-[var(--yomi-accent)]" />
-              </Link>
+              {user ? (
+                <Link
+                  href="/conta/backup"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-between rounded-2xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm font-medium text-white"
+                >
+                  <span>Backup (.kuro)</span>
+                  <HardDriveDownload className="w-4 h-4 text-[var(--yomi-accent)]" />
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/biblioteca"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-between rounded-2xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm font-medium text-white"
+                  >
+                    <span>Minha Biblioteca</span>
+                    <BookOpen className="w-4 h-4 text-[var(--yomi-accent)]" />
+                  </Link>
+                  <Link
+                    href="/conta"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-between rounded-2xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm font-medium text-white"
+                  >
+                    <span>Meu Perfil & Nuvem</span>
+                    <UserIcon className="w-4 h-4 text-[var(--yomi-accent)]" />
+                  </Link>
+                </>
+              )}
             </nav>
 
             {/* Seletor de tema no mobile */}

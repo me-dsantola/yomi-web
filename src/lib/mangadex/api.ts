@@ -104,17 +104,99 @@ export function resolveBestTitle(attr: {
   );
 }
 
+const LEGACY_ID_PREFIX_RE = /^(cmk_mdx_|hq_mdx_|ani_mdx_|mal_mdx_|cmk_title_)+/i;
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function cleanMangaDexId(rawId: string): string {
+  return String(rawId ?? '').trim().replace(LEGACY_ID_PREFIX_RE, '');
+}
+
+export function isUuid(value: string): boolean {
+  return UUID_RE.test(String(value ?? '').trim());
+}
+
+export function buildWorkHref(mangaId: string, title?: string): string {
+  const cleanId = cleanMangaDexId(mangaId) || String(mangaId ?? '').trim();
+  const trimmedTitle = title?.trim();
+  return trimmedTitle
+    ? `/obra/${encodeURIComponent(cleanId)}?title=${encodeURIComponent(trimmedTitle)}`
+    : `/obra/${encodeURIComponent(cleanId)}`;
+}
+
+function normalizeTitleKey(value?: string): string {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
+}
+
 export function buildMangaCoverUrl(
   mangaId: string,
   coverFileName?: string,
   highRes = false
 ): string {
-  if (!mangaId || !coverFileName) {
+  const cleanId = cleanMangaDexId(mangaId);
+  if (!cleanId || !coverFileName) {
     return '/brand/icon-1024.png';
   }
   const suffix = highRes ? '.512.jpg' : '.256.jpg';
-  const upstreamUrl = `https://uploads.mangadex.org/covers/${mangaId}/${coverFileName}${suffix}`;
+  const upstreamUrl = `https://uploads.mangadex.org/covers/${cleanId}/${coverFileName}${suffix}`;
   return `/api/cover?url=${encodeURIComponent(upstreamUrl)}`;
+}
+
+export function resolveMangaEntryCoverUrl(
+  manga?: {
+    id?: string;
+    title?: string;
+    coverFileName?: string;
+    directCoverUrl?: string;
+    directHighResCoverUrl?: string;
+  } | null,
+  highRes = false
+): string {
+  if (!manga) {
+    return '/brand/icon-1024.png';
+  }
+
+  const directRaw = (
+    highRes
+      ? manga.directHighResCoverUrl || manga.directCoverUrl
+      : manga.directCoverUrl || manga.directHighResCoverUrl
+  )?.trim();
+
+  if (directRaw) {
+    if (directRaw.startsWith('/api/cover') || directRaw.startsWith('/brand/')) {
+      return directRaw;
+    }
+    if (directRaw.startsWith('https://')) {
+      return `/api/cover?url=${encodeURIComponent(directRaw)}`;
+    }
+  }
+
+  const cleanId = cleanMangaDexId(manga.id ?? '');
+  if (manga.coverFileName && isUuid(cleanId)) {
+    return buildMangaCoverUrl(cleanId, manga.coverFileName, highRes);
+  }
+
+  const curatedById = cleanId ? findCuratedWorkById(cleanId) : undefined;
+  if (curatedById) {
+    return highRes ? curatedById.coverHighResUrl : curatedById.coverUrl;
+  }
+
+  const titleKey = normalizeTitleKey(manga.title);
+  if (titleKey) {
+    const curatedByTitle = CURATED_POPULAR_WORKS.find(
+      (item) =>
+        normalizeTitleKey(item.title) === titleKey ||
+        normalizeTitleKey(item.altTitle) === titleKey
+    );
+    if (curatedByTitle) {
+      return highRes ? curatedByTitle.coverHighResUrl : curatedByTitle.coverUrl;
+    }
+  }
+
+  return '/brand/icon-1024.png';
 }
 
 export function parseMangaDexEntity(raw: Record<string, any>): MangaDexWork {
@@ -289,29 +371,61 @@ export async function searchMangaCatalog(
   }
 }
 
-export async function fetchMangaDetails(mangaId: string): Promise<MangaDexWork> {
-  const params = new URLSearchParams();
-  params.append('includes[]', 'cover_art');
-  params.append('includes[]', 'author');
-  params.append('includes[]', 'artist');
+export async function fetchMangaDetails(
+  mangaId: string,
+  fallbackTitle?: string
+): Promise<MangaDexWork> {
+  const cleanId = cleanMangaDexId(mangaId);
 
-  try {
-    const res = await fetch(
-      `/api/md/manga/${encodeURIComponent(mangaId)}?${params.toString()}`
-    );
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
+  if (isUuid(cleanId)) {
+    const params = new URLSearchParams();
+    params.append('includes[]', 'cover_art');
+    params.append('includes[]', 'author');
+    params.append('includes[]', 'artist');
+
+    try {
+      const res = await fetch(
+        `/api/md/manga/${encodeURIComponent(cleanId)}?${params.toString()}`
+      );
+      if (res.ok) {
+        const json = await res.json();
+        if (json?.data) {
+          return parseMangaDexEntity(json.data);
+        }
+      }
+    } catch {
+      // Fallback below
     }
-    const json = await res.json();
-    if (!json?.data) {
-      throw new Error('Obra não encontrada');
-    }
-    return parseMangaDexEntity(json.data);
-  } catch (err) {
-    const curated = findCuratedWorkById(mangaId);
-    if (curated) return curated;
-    throw err;
   }
+
+  const curatedById = cleanId ? findCuratedWorkById(cleanId) : undefined;
+  if (curatedById) {
+    return curatedById;
+  }
+
+  const queryText = (
+    fallbackTitle || (!isUuid(cleanId) ? cleanId.replace(/[_-]+/g, ' ') : '')
+  ).trim();
+
+  if (queryText) {
+    const matches = await searchMangaCatalog({
+      query: queryText,
+      limit: 5,
+      safeOnly: false,
+    });
+    if (matches.length > 0) {
+      const targetKey = normalizeTitleKey(queryText);
+      return (
+        matches.find(
+          (item) =>
+            normalizeTitleKey(item.title) === targetKey ||
+            normalizeTitleKey(item.altTitle) === targetKey
+        ) ?? matches[0]
+      );
+    }
+  }
+
+  throw new Error('Obra não encontrada');
 }
 
 function parseChapterList(
@@ -355,6 +469,11 @@ export async function fetchMangaChapters(
   mangaId: string,
   direction: 'asc' | 'desc' = 'asc'
 ): Promise<MangaDexChapter[]> {
+  const cleanId = cleanMangaDexId(mangaId);
+  if (!isUuid(cleanId)) {
+    return [];
+  }
+
   const fetchLangFeed = async (lang?: string): Promise<MangaDexChapter[]> => {
     const params = new URLSearchParams();
     params.set('limit', '500');
@@ -369,7 +488,7 @@ export async function fetchMangaChapters(
     params.append('contentRating[]', 'erotica');
 
     const res = await fetch(
-      `/api/md/manga/${encodeURIComponent(mangaId)}/feed?${params.toString()}`
+      `/api/md/manga/${encodeURIComponent(cleanId)}/feed?${params.toString()}`
     );
     if (!res.ok) return [];
     const json = await res.json();

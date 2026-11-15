@@ -3,19 +3,24 @@ import {
   getDoc,
   runTransaction,
   serverTimestamp,
+  type DocumentSnapshot,
 } from 'firebase/firestore';
 import { getFirebaseClient } from './client';
 import {
+  CURRENT_BACKUP_VERSION,
   decodeKuroBackup,
+  encodeKuroBackup,
   mergeHistoryIntoPayload,
   summarizeBackup,
   type WebReaderProgressUpdate,
   type YomiBackupV4,
+  type YomiChapterEntry,
   type YomiMangaEntry,
   type YomiProfile,
   type YomiReadingList,
   type YomiRecentReadingItem,
 } from '@/lib/backup/kuroCodec';
+import { cleanMangaDexId } from '@/lib/mangadex/api';
 
 export interface ParsedYomiCloudState {
   uid: string;
@@ -38,11 +43,122 @@ export interface ParsedYomiCloudState {
   mascotName: string;
 }
 
+export function getReaderRankInfo(totalChaptersRead: number): {
+  title: string;
+  progress: number;
+  nextGoal: number;
+} {
+  const safeCount = Math.max(0, Math.floor(totalChaptersRead));
+  if (safeCount >= 100) {
+    return {
+      title: 'Xogun das Letras • Nível S',
+      progress: 100,
+      nextGoal: 100,
+    };
+  }
+  if (safeCount >= 40) {
+    return {
+      title: 'Mestre Ronin • Nível A',
+      progress: Math.round(((safeCount - 40) / 60) * 100),
+      nextGoal: 100,
+    };
+  }
+  if (safeCount >= 15) {
+    return {
+      title: 'Espadachim Samurai • Nível B',
+      progress: Math.round(((safeCount - 15) / 25) * 100),
+      nextGoal: 40,
+    };
+  }
+  if (safeCount >= 3) {
+    return {
+      title: 'Caçador de Capítulos • Nível C',
+      progress: Math.round(((safeCount - 3) / 12) * 100),
+      nextGoal: 15,
+    };
+  }
+  return {
+    title: 'Iniciado do Torii • Nível 1',
+    progress: Math.max(8, Math.round((safeCount / 3) * 100)),
+    nextGoal: 3,
+  };
+}
+
+export function countReadChaptersFromHistory(
+  historyMap?: Record<string, unknown>,
+  fallbackRecentCount = 0
+): number {
+  if (!historyMap) return fallbackRecentCount;
+  let count = 0;
+  for (const [key, value] of Object.entries(historyMap)) {
+    if (key.startsWith('read_') && value === true) {
+      count += 1;
+    }
+  }
+  return Math.max(count, fallbackRecentCount);
+}
+
+export function createEmptyCloudState(
+  uid: string,
+  userEmail: string | null,
+  userDisplayName?: string | null
+): ParsedYomiCloudState {
+  const resolvedName =
+    userDisplayName?.trim() ||
+    userEmail?.split('@')[0]?.trim() ||
+    'Leitor YOMI';
+
+  const profile: YomiProfile = {
+    name: resolvedName,
+    bio: 'Explorando universos de mangás, manhwas e webtoons.',
+    favoriteGenre: 'Ação, Fantasia & Seinen',
+    blobatarName: 'Kuro',
+    blobatarShape: 'auto',
+    blobatarExpression: 'happy',
+    customAccentColor: 0xffff2a55,
+    useBlobatarAsAvatar: true,
+    isConfigured: true,
+  };
+
+  const backup: YomiBackupV4 = {
+    version: CURRENT_BACKUP_VERSION,
+    profile,
+    favorites: {},
+    history: {
+      recent_reading_list: [],
+    },
+    settings: {
+      user_reading_lists: [],
+    },
+  };
+
+  const rawPayload = encodeKuroBackup(backup, true);
+
+  return {
+    uid,
+    userEmail,
+    userDisplayName: resolvedName,
+    updatedAtLocal: '',
+    appVersion: '1.2.8',
+    rawPayload,
+    backup,
+    profile,
+    avatarDataUrl: null,
+    bannerDataUrl: null,
+    favorites: [],
+    recentReads: [],
+    readingLists: [],
+    favoritesCount: 0,
+    historyCount: 0,
+    readingListsCount: 0,
+    mascotName: 'Kuro',
+  };
+}
+
 export function parseRawCloudDocData(
   data: Record<string, any>,
   expectedEmail?: string | null
 ): ParsedYomiCloudState {
-  // Segurança de conta: valida que doc.userEmail pertence ao e-mail autenticado
   if (
     data.userEmail &&
     expectedEmail &&
@@ -139,27 +255,120 @@ export function parseRawCloudDocData(
 
 /**
  * Busca o documento `users/{uid}` do Firestore e valida com o codec `.kuro` v4.
- * Retorna `null` caso o usuário ainda não tenha sincronizado o app móvel.
+ * Caso o usuário ainda não tenha documento na nuvem, inicializa um estado padrão na sessão web.
  */
 export async function fetchUserCloudDoc(
   uid: string,
-  userEmail: string | null
-): Promise<ParsedYomiCloudState | null> {
+  userEmail: string | null,
+  userDisplayName?: string | null
+): Promise<ParsedYomiCloudState> {
   const { db } = getFirebaseClient();
   const ref = doc(db, 'users', uid);
   const snap = await getDoc(ref);
 
   if (!snap.exists()) {
-    return null;
+    return createEmptyCloudState(uid, userEmail, userDisplayName);
   }
 
-  return parseRawCloudDocData(snap.data(), userEmail);
+  const data = snap.data();
+  if (typeof data.payload !== 'string' || !data.payload.trim()) {
+    const empty = createEmptyCloudState(uid, userEmail, userDisplayName);
+    return {
+      ...empty,
+      profile: {
+        ...empty.profile,
+        ...(typeof data.profile === 'object' && data.profile ? data.profile : {}),
+      },
+      userDisplayName: data.userDisplayName
+        ? String(data.userDisplayName)
+        : empty.userDisplayName,
+    };
+  }
+
+  return parseRawCloudDocData(data, userEmail);
+}
+
+function readTxBackupState(
+  snap: DocumentSnapshot,
+  uid: string,
+  userEmail: string | null
+): {
+  docExists: boolean;
+  existingData: Record<string, any>;
+  rawPayload: string;
+  decoded: YomiBackupV4;
+  wasRawJson: boolean;
+} {
+  if (snap.exists()) {
+    const data = snap.data() ?? {};
+    if (
+      data.userEmail &&
+      userEmail &&
+      String(data.userEmail).toLowerCase() !== userEmail.toLowerCase()
+    ) {
+      throw new Error('Os dados na nuvem pertencem a outra conta de e-mail.');
+    }
+    const existingPayload =
+      typeof data.payload === 'string' && data.payload.trim()
+        ? data.payload.trim()
+        : createEmptyCloudState(uid, userEmail, data.userDisplayName).rawPayload;
+    return {
+      docExists: true,
+      existingData: data,
+      rawPayload: existingPayload,
+      decoded: decodeKuroBackup(existingPayload),
+      wasRawJson: existingPayload.startsWith('{'),
+    };
+  }
+
+  const empty = createEmptyCloudState(uid, userEmail);
+  return {
+    docExists: false,
+    existingData: {},
+    rawPayload: empty.rawPayload,
+    decoded: decodeKuroBackup(empty.rawPayload),
+    wasRawJson: false,
+  };
+}
+
+function enrichMangaMetadata(
+  decoded: YomiBackupV4,
+  manga: YomiMangaEntry
+): YomiMangaEntry {
+  const cleanId = cleanMangaDexId(manga.id);
+  const favMatch =
+    decoded.favorites?.[manga.id] ??
+    decoded.favorites?.[cleanId] ??
+    Object.values(decoded.favorites ?? {}).find(
+      (f) => cleanMangaDexId(f.id) === cleanId
+    );
+
+  const historyMap = decoded.history ?? {};
+  const metaCandidate =
+    (historyMap[`manga_meta_${manga.id}`] as YomiMangaEntry | undefined) ??
+    (historyMap[`manga_meta_${cleanId}`] as YomiMangaEntry | undefined);
+
+  const recentList = Array.isArray(historyMap.recent_reading_list)
+    ? (historyMap.recent_reading_list as YomiRecentReadingItem[])
+    : [];
+  const recentMatch = recentList.find(
+    (item) => cleanMangaDexId(item?.manga?.id ?? '') === cleanId
+  )?.manga;
+
+  const base = favMatch ?? metaCandidate ?? recentMatch;
+  return {
+    ...(base ?? {}),
+    ...manga,
+    coverFileName: manga.coverFileName ?? base?.coverFileName,
+    directCoverUrl: manga.directCoverUrl ?? base?.directCoverUrl,
+    directHighResCoverUrl:
+      manga.directHighResCoverUrl ?? base?.directHighResCoverUrl,
+  };
 }
 
 /**
- * Fase 6: Grava progresso de leitura do Quick Reader Web dentro de `payload`
- * utilizando transação do Firestore, preservando `avatarBase64`, `bannerBase64`,
- * `profile` e chaves desconhecidas.
+ * Grava progresso de leitura do Quick Reader Web dentro de `payload`
+ * utilizando transação do Firestore, preservando capas, perfil e chaves desconhecidas.
  */
 export async function saveWebReaderProgressToCloud(
   uid: string,
@@ -171,29 +380,38 @@ export async function saveWebReaderProgressToCloud(
 
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(ref);
-    if (!snap.exists()) {
-      return;
-    }
-    const data = snap.data();
-    if (
-      data.userEmail &&
-      userEmail &&
-      String(data.userEmail).toLowerCase() !== userEmail.toLowerCase()
-    ) {
-      throw new Error('Conflito de e-mail na conta da nuvem.');
-    }
+    const { docExists, rawPayload, decoded } = readTxBackupState(
+      snap,
+      uid,
+      userEmail
+    );
 
-    const currentPayload = typeof data.payload === 'string' ? data.payload : '';
-    if (!currentPayload) return;
+    const enrichedUpdate: WebReaderProgressUpdate = {
+      ...update,
+      manga: enrichMangaMetadata(decoded, update.manga),
+    };
 
     const { nextPayload, historyCount } = mergeHistoryIntoPayload(
-      currentPayload,
-      update
+      rawPayload,
+      enrichedUpdate
     );
+
+    const baseFields = docExists
+      ? {}
+      : {
+          uid,
+          userEmail,
+          userDisplayName: decoded.profile?.name ?? 'Leitor YOMI',
+          profile: decoded.profile ?? {},
+          favoritesCount: 0,
+          readingListsCount: 0,
+          mascotName: decoded.profile?.blobatarName || 'Kuro',
+        };
 
     tx.set(
       ref,
       {
+        ...baseFields,
         payload: nextPayload,
         historyCount,
         updatedAt: serverTimestamp(),
@@ -205,7 +423,275 @@ export async function saveWebReaderProgressToCloud(
 }
 
 /**
- * Fase 6: Importa um arquivo `.kuro` validado para a nuvem usando transação,
+ * Alterna uma obra nos favoritos da nuvem usando transação segura no Firestore.
+ */
+export async function toggleCloudFavorite(
+  uid: string,
+  userEmail: string | null,
+  manga: YomiMangaEntry
+): Promise<{ isFavorite: boolean }> {
+  const { db } = getFirebaseClient();
+  const ref = doc(db, 'users', uid);
+  let nextState = false;
+
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    const { docExists, decoded, wasRawJson } = readTxBackupState(
+      snap,
+      uid,
+      userEmail
+    );
+
+    const nextFavorites: Record<string, YomiMangaEntry> = {
+      ...(decoded.favorites ?? {}),
+    };
+
+    const cleanTarget = cleanMangaDexId(manga.id);
+    const matchingKey = Object.keys(nextFavorites).find(
+      (k) => k === manga.id || cleanMangaDexId(k) === cleanTarget
+    );
+
+    if (matchingKey) {
+      delete nextFavorites[matchingKey];
+      nextState = false;
+    } else {
+      nextFavorites[manga.id] = enrichMangaMetadata(decoded, manga);
+      nextState = true;
+    }
+
+    const nextBackup: YomiBackupV4 = {
+      ...decoded,
+      version: decoded.version ?? CURRENT_BACKUP_VERSION,
+      favorites: nextFavorites,
+    };
+
+    const nextPayload = encodeKuroBackup(nextBackup, !wasRawJson);
+    const summary = summarizeBackup(nextBackup);
+
+    const baseFields = docExists
+      ? {}
+      : {
+          uid,
+          userEmail,
+          userDisplayName: decoded.profile?.name ?? 'Leitor YOMI',
+          profile: decoded.profile ?? {},
+          historyCount: summary.historyCount,
+          readingListsCount: summary.readingListsCount,
+          mascotName: summary.mascotName,
+        };
+
+    tx.set(
+      ref,
+      {
+        ...baseFields,
+        payload: nextPayload,
+        favoritesCount: summary.favoritesCount,
+        updatedAt: serverTimestamp(),
+        updatedAtLocal: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+  });
+
+  return { isFavorite: nextState };
+}
+
+/**
+ * Salva as coleções personalizadas (`user_reading_lists`) na nuvem.
+ */
+export async function saveCloudReadingLists(
+  uid: string,
+  userEmail: string | null,
+  readingLists: YomiReadingList[]
+): Promise<void> {
+  const { db } = getFirebaseClient();
+  const ref = doc(db, 'users', uid);
+
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    const { docExists, decoded, wasRawJson } = readTxBackupState(
+      snap,
+      uid,
+      userEmail
+    );
+
+    const nextBackup: YomiBackupV4 = {
+      ...decoded,
+      version: decoded.version ?? CURRENT_BACKUP_VERSION,
+      settings: {
+        ...(decoded.settings ?? {}),
+        user_reading_lists: readingLists,
+      },
+    };
+
+    const nextPayload = encodeKuroBackup(nextBackup, !wasRawJson);
+    const summary = summarizeBackup(nextBackup);
+
+    const baseFields = docExists
+      ? {}
+      : {
+          uid,
+          userEmail,
+          userDisplayName: decoded.profile?.name ?? 'Leitor YOMI',
+          profile: decoded.profile ?? {},
+          favoritesCount: summary.favoritesCount,
+          historyCount: summary.historyCount,
+          mascotName: summary.mascotName,
+        };
+
+    tx.set(
+      ref,
+      {
+        ...baseFields,
+        payload: nextPayload,
+        readingListsCount: readingLists.length,
+        updatedAt: serverTimestamp(),
+        updatedAtLocal: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+  });
+}
+
+/**
+ * Atualiza perfil e personalização do mascote Blobatar diretamente na nuvem.
+ */
+export async function updateCloudUserProfile(
+  uid: string,
+  userEmail: string | null,
+  profilePatch: Partial<YomiProfile>
+): Promise<void> {
+  const { db } = getFirebaseClient();
+  const ref = doc(db, 'users', uid);
+
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    const { docExists, existingData, decoded, wasRawJson } = readTxBackupState(
+      snap,
+      uid,
+      userEmail
+    );
+
+    const nextProfile: YomiProfile = {
+      ...(decoded.profile ?? {}),
+      ...(typeof existingData.profile === 'object' && existingData.profile
+        ? existingData.profile
+        : {}),
+      ...profilePatch,
+      isConfigured: true,
+    };
+
+    const nextBackup: YomiBackupV4 = {
+      ...decoded,
+      version: decoded.version ?? CURRENT_BACKUP_VERSION,
+      profile: nextProfile,
+    };
+
+    const nextPayload = encodeKuroBackup(nextBackup, !wasRawJson);
+    const summary = summarizeBackup(nextBackup);
+
+    const baseFields = docExists
+      ? {}
+      : {
+          uid,
+          userEmail,
+          favoritesCount: summary.favoritesCount,
+          historyCount: summary.historyCount,
+          readingListsCount: summary.readingListsCount,
+        };
+
+    tx.set(
+      ref,
+      {
+        ...baseFields,
+        payload: nextPayload,
+        profile: nextProfile,
+        userDisplayName:
+          nextProfile.name || existingData.userDisplayName || 'Leitor YOMI',
+        mascotName: nextProfile.blobatarName || 'Kuro',
+        updatedAt: serverTimestamp(),
+        updatedAtLocal: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+  });
+}
+
+/**
+ * Marca ou desmarca um capítulo como lido no histórico sincronizado na nuvem.
+ */
+export async function toggleChapterReadInCloud(
+  uid: string,
+  userEmail: string | null,
+  manga: YomiMangaEntry,
+  chapter: YomiChapterEntry,
+  markRead: boolean
+): Promise<void> {
+  const { db } = getFirebaseClient();
+  const ref = doc(db, 'users', uid);
+
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    const { docExists, rawPayload, decoded, wasRawJson } = readTxBackupState(
+      snap,
+      uid,
+      userEmail
+    );
+
+    let nextPayload: string;
+    let historyCount: number;
+
+    if (markRead) {
+      const merged = mergeHistoryIntoPayload(rawPayload, {
+        manga: enrichMangaMetadata(decoded, manga),
+        chapter,
+        pageIndex: Math.max(0, (chapter.pages ?? 1) - 1),
+        completed: true,
+      });
+      nextPayload = merged.nextPayload;
+      historyCount = merged.historyCount;
+    } else {
+      const nextHistory: Record<string, unknown> = {
+        ...(decoded.history ?? {}),
+      };
+      nextHistory[`read_${chapter.id}`] = false;
+      const nextBackup: YomiBackupV4 = {
+        ...decoded,
+        version: decoded.version ?? CURRENT_BACKUP_VERSION,
+        history: nextHistory,
+      };
+      nextPayload = encodeKuroBackup(nextBackup, !wasRawJson);
+      historyCount = Object.keys(nextHistory).length;
+    }
+
+    const baseFields = docExists
+      ? {}
+      : {
+          uid,
+          userEmail,
+          userDisplayName: decoded.profile?.name ?? 'Leitor YOMI',
+          profile: decoded.profile ?? {},
+          favoritesCount: 0,
+          readingListsCount: 0,
+          mascotName: decoded.profile?.blobatarName || 'Kuro',
+        };
+
+    tx.set(
+      ref,
+      {
+        ...baseFields,
+        payload: nextPayload,
+        historyCount,
+        updatedAt: serverTimestamp(),
+        updatedAtLocal: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+  });
+}
+
+/**
+ * Importa um arquivo `.kuro` validado para a nuvem usando transação,
  * preservando `avatarBase64` e `bannerBase64` já salvos no Firestore.
  */
 export async function importKuroBackupToCloud(

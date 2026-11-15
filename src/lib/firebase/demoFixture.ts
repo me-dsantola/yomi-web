@@ -25,7 +25,7 @@ export const DEMO_BACKUP_OBJECT: YomiBackupV4 = {
       description: 'A grande era dos piratas em busca do tesouro definitivo.',
       status: 'ongoing',
       source: 'mangadex',
-      coverFileName: 'eb21cd7d-2342-4c1c-b411-438a8c67346c.jpg',
+      coverFileName: '2f4aca53-64c7-46ac-ae85-3bc9b3169890.png',
       tags: ['Ação', 'Aventura', 'Fantasia'],
       isNsfw: false,
       availableChaptersCount: 1130,
@@ -106,10 +106,14 @@ export const DEMO_BACKUP_OBJECT: YomiBackupV4 = {
           {
             id: '32d76d19-8a05-4db0-9fc2-e0b0648fe9d0',
             title: 'Solo Leveling',
+            source: 'mangadex',
+            coverFileName: 'e90bdc47-c8b9-4df7-b2c0-17641b645ee1.jpg',
           },
           {
             id: '801513ba-a712-498c-8f57-cae55b38cc92',
             title: 'Berserk',
+            source: 'mangadex',
+            coverFileName: '81e1c82d-6672-400c-8c58-4ff9bfb89031.jpg',
           },
         ],
       },
