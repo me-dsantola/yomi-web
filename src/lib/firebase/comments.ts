@@ -29,42 +29,6 @@ export interface YomiComment {
   createdAt: number;
 }
 
-const LOCAL_STORAGE_PREFIX = 'yomi-comments-v1:';
-
-function readLocalComments(targetId: string): YomiComment[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = window.localStorage.getItem(`${LOCAL_STORAGE_PREFIX}${targetId}`);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeLocalComments(targetId: string, list: YomiComment[]): void {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(
-      `${LOCAL_STORAGE_PREFIX}${targetId}`,
-      JSON.stringify(list.slice(0, 80))
-    );
-  } catch {
-    // Ignora cota cheia / ambiente restrito
-  }
-}
-
-function mergeComments(
-  remote: YomiComment[],
-  local: YomiComment[]
-): YomiComment[] {
-  const byId = new Map<string, YomiComment>();
-  for (const c of local) byId.set(c.id, c);
-  for (const c of remote) byId.set(c.id, c);
-  return Array.from(byId.values()).sort((a, b) => b.createdAt - a.createdAt);
-}
-
 export async function fetchComments(targetId: string): Promise<YomiComment[]> {
   try {
     const { db } = getFirebaseClient();
