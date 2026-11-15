@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Shuffle } from "lucide-react";
+import { useYomiAuth } from "@/components/providers/AppProviders";
 import {
   BlobatarCompanion,
   BLOBATAR_EXPRESSIONS,
@@ -29,6 +30,7 @@ const QUICK_EXPRESSIONS = [
 ];
 
 export function BlobatarInteractiveShowcase() {
+  const { user } = useYomiAuth();
   const [seedInput, setSeedInput] = useState("YOMI");
   const [selectedShape, setSelectedShape] = useState("auto");
   const [selectedExpr, setSelectedExpr] = useState("happy");
@@ -56,6 +58,10 @@ export function BlobatarInteractiveShowcase() {
       HUE_SWATCHES[Math.floor(Math.random() * HUE_SWATCHES.length)].hue
     );
   };
+
+  if (user) {
+    return null;
+  }
 
   return (
     <section className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-10 py-16 sm:py-20">

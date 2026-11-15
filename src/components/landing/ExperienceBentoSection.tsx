@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight, Download } from 'lucide-react';
+import { useYomiAuth } from '@/components/providers/AppProviders';
 
 export function ExperienceBentoSection({
   latestVersion,
@@ -12,6 +13,12 @@ export function ExperienceBentoSection({
   latestVersion: string;
   downloadUrl: string;
 }) {
+  const { user } = useYomiAuth();
+
+  if (user) {
+    return null;
+  }
+
   return (
     <>
       <section className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-10 py-14 sm:py-20">
