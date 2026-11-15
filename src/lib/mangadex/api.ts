@@ -474,25 +474,37 @@ export async function fetchMangaChapters(
     return [];
   }
 
-  const fetchLangFeed = async (lang?: string): Promise<MangaDexChapter[]> => {
-    const params = new URLSearchParams();
-    params.set('limit', '500');
-    if (lang) {
+  const fetchLangFeed = async (lang: string): Promise<MangaDexChapter[]> => {
+    const pageSize = 100;
+    const all: MangaDexChapter[] = [];
+    let offset = 0;
+    // Request pages sequentially to respect the MangaDex feed limit and rate limits.
+    while (true) {
+      const params = new URLSearchParams();
+      params.set('limit', String(pageSize));
+      params.set('offset', String(offset));
       params.append('translatedLanguage[]', lang);
-    }
-    params.append('includes[]', 'scanlation_group');
-    params.set('order[chapter]', direction);
-    params.set('includeExternalUrl', '0');
-    params.append('contentRating[]', 'safe');
-    params.append('contentRating[]', 'suggestive');
-    params.append('contentRating[]', 'erotica');
+      params.append('includes[]', 'scanlation_group');
+      params.set('order[chapter]', direction);
+      params.set('includeExternalUrl', '0');
+      params.append('contentRating[]', 'safe');
+      params.append('contentRating[]', 'suggestive');
+      params.append('contentRating[]', 'erotica');
 
-    const res = await fetch(
-      `/api/md/manga/${encodeURIComponent(cleanId)}/feed?${params.toString()}`
-    );
-    if (!res.ok) return [];
-    const json = await res.json();
-    return parseChapterList(Array.isArray(json.data) ? json.data : []);
+      const res = await fetch(
+        `/api/md/manga/${encodeURIComponent(cleanId)}/feed?${params.toString()}`
+      );
+      if (!res.ok) {
+        throw new Error(`Falha ao carregar capítulos (${res.status}, idioma ${lang}, offset ${offset})`);
+      }
+      const json = await res.json();
+      const entries = Array.isArray(json.data) ? json.data : [];
+      all.push(...parseChapterList(entries));
+      offset += entries.length;
+      const total = typeof json.total === 'number' ? json.total : null;
+      if (entries.length === 0 || (total !== null && offset >= total) || entries.length < pageSize) break;
+    }
+    return all;
   };
 
   const [ptChapters, enChapters] = await Promise.all([
