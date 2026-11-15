@@ -3,9 +3,11 @@ import {
   decodeKuroBackup,
   encodeKuroBackup,
   mergeHistoryIntoPayload,
+  stripEphemeralCacheForCloud,
   summarizeBackup,
   buildKuroFilename,
   argbIntToHex,
+  type YomiBackupV4,
 } from "@/lib/backup/kuroCodec";
 import { DEMO_BACKUP_OBJECT, getDemoCloudDocument } from "@/lib/firebase/demoFixture";
 import { parseRawCloudDocData } from "@/lib/firebase/cloudSync";
@@ -90,5 +92,34 @@ describe("Codec e Validador de Backups .kuro (v4)", () => {
     const fixedDate = new Date("2026-11-14T12:00:00Z");
     expect(buildKuroFilename(fixedDate)).toMatch(/^yomi-backup-2026-11-1[34]\.kuro$/);
     expect(argbIntToHex(0xffff2a55)).toBe("#FF2A55");
+  });
+
+  it("remove caches efêmeros chapters_* preservando chapters_count_* e limita listas extensas em stripEphemeralCacheForCloud", () => {
+    const bloated: YomiBackupV4 = {
+      version: 4,
+      favorites: {},
+      history: {
+        chapters_one_piece: [{ id: "cache-1" }],
+        chapters_count_one_piece: 1130,
+        read_cap_1: true,
+        recent_reading_list: Array.from({ length: 45 }, (_, i) => ({
+          manga: { id: `m-${i}`, title: `Manga ${i}` },
+          chapter: { id: `c-${i}` },
+        })),
+        reading_events_log: Array.from({ length: 220 }, (_, i) => ({
+          idx: i,
+        })),
+      },
+    };
+
+    const compacted = stripEphemeralCacheForCloud(bloated);
+    const h = compacted.history!;
+
+    expect(h.chapters_one_piece).toBeUndefined();
+    expect(h.chapters_count_one_piece).toBe(1130);
+    expect(h.read_cap_1).toBe(true);
+    expect((h.recent_reading_list as unknown[]).length).toBe(30);
+    expect((h.reading_events_log as Array<{ idx: number }>).length).toBe(150);
+    expect((h.reading_events_log as Array<{ idx: number }>)[0].idx).toBe(70);
   });
 });

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -13,6 +13,9 @@ import {
   HardDriveDownload,
   BookOpen,
   Library,
+  Home,
+  Compass,
+  Bookmark,
 } from 'lucide-react';
 import { YomiLogo } from '@/components/brand/YomiLogo';
 import { BlobatarCompanion } from '@/components/brand/BlobatarCompanion';
@@ -23,6 +26,10 @@ import {
   THEME_PRESETS,
   type YomiThemePreset,
 } from '@/lib/store/readerStore';
+import {
+  shouldShowMobileBottomNav,
+  type MobileScrollDirection,
+} from '@/lib/mobile/readerTouchAndNav';
 import { cn } from '@/lib/utils';
 import type { YomiReleaseInfo } from '@/lib/github/releases';
 
@@ -100,16 +107,98 @@ export function YomiNavbar({ latestVersion = '1.2.9' }: YomiNavbarProps) {
   const blobatarShape = cloudState?.profile?.blobatarShape || 'auto';
 
   const [scrolled, setScrolled] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
+  const [scrollDirection, setScrollDirection] =
+    useState<MobileScrollDirection>('idle');
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const lastScrollYRef = useRef(0);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setUserMenuOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     const onScroll = () => {
-      setScrolled(window.scrollY > 24);
+      const currentY = window.scrollY;
+      const delta = currentY - lastScrollYRef.current;
+      setScrolled(currentY > 24);
+      setScrollY(currentY);
+
+      if (currentY < 48) {
+        setScrollDirection('up');
+        lastScrollYRef.current = currentY;
+      } else if (delta > 10) {
+        setScrollDirection('down');
+        lastScrollYRef.current = currentY;
+      } else if (delta < -8) {
+        setScrollDirection('up');
+        lastScrollYRef.current = currentY;
+      }
     };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    const isTextEntryElement = (target: EventTarget | null) => {
+      if (!(target instanceof HTMLElement)) return false;
+      if (target.isContentEditable) return true;
+      const tag = target.tagName;
+      if (tag === 'TEXTAREA' || tag === 'SELECT') return true;
+      if (tag === 'INPUT') {
+        const inputType = (target as HTMLInputElement).type?.toLowerCase();
+        return ![
+          'checkbox',
+          'radio',
+          'range',
+          'button',
+          'submit',
+          'reset',
+          'file',
+          'color',
+        ].includes(inputType);
+      }
+      return false;
+    };
+
+    let maxViewportHeight =
+      typeof window !== 'undefined' ? window.innerHeight : 0;
+
+    const checkKeyboardState = () => {
+      if (typeof window === 'undefined') return;
+      maxViewportHeight = Math.max(maxViewportHeight, window.innerHeight);
+      const vv = window.visualViewport;
+      const viewportCollapsed =
+        Boolean(vv) &&
+        maxViewportHeight > 0 &&
+        vv!.height < maxViewportHeight * 0.75;
+      setIsKeyboardOpen(
+        Boolean(isTextEntryElement(document.activeElement) || viewportCollapsed)
+      );
+    };
+
+    const onFocusIn = (e: FocusEvent) => {
+      if (isTextEntryElement(e.target)) {
+        setIsKeyboardOpen(true);
+      }
+    };
+
+    const onFocusOut = () => {
+      window.setTimeout(checkKeyboardState, 80);
+    };
+
+    window.addEventListener('focusin', onFocusIn);
+    window.addEventListener('focusout', onFocusOut);
+    window.visualViewport?.addEventListener('resize', checkKeyboardState);
+    return () => {
+      window.removeEventListener('focusin', onFocusIn);
+      window.removeEventListener('focusout', onFocusOut);
+      window.visualViewport?.removeEventListener('resize', checkKeyboardState);
+    };
   }, []);
 
   // Oculta navbar global dentro do leitor em tela cheia (/ler/...)
@@ -117,21 +206,58 @@ export function YomiNavbar({ latestVersion = '1.2.9' }: YomiNavbarProps) {
     return null;
   }
 
+  const showBottomNav =
+    shouldShowMobileBottomNav({
+      pathname,
+      isKeyboardOpen,
+      scrollDirection,
+      scrollY,
+    }) && !mobileMenuOpen;
+
+  const mobileBottomTabs = [
+    {
+      href: '/',
+      label: 'Início',
+      icon: Home,
+      isActive: (p: string | null) => p === '/',
+    },
+    {
+      href: '/explorar',
+      label: 'Explorar',
+      icon: Compass,
+      isActive: (p: string | null) => Boolean(p?.startsWith('/explorar')),
+    },
+    {
+      href: '/biblioteca',
+      label: 'Biblioteca',
+      icon: Bookmark,
+      isActive: (p: string | null) => Boolean(p?.startsWith('/biblioteca')),
+    },
+    {
+      href: '/conta',
+      label: 'Perfil',
+      icon: UserIcon,
+      isActive: (p: string | null) => Boolean(p?.startsWith('/conta')),
+    },
+  ];
+
   return (
     <>
       <header
         className={cn(
-          'fixed top-0 left-0 right-0 z-50 transition-all duration-300 px-4 sm:px-6',
-          scrolled ? 'pt-2.5' : 'pt-4'
+          'fixed top-0 left-0 right-0 z-50 transition-all duration-300 px-3 sm:px-6',
+          scrolled
+            ? 'pt-[max(0.5rem,env(safe-area-inset-top))]'
+            : 'pt-[max(0.85rem,env(safe-area-inset-top))]'
         )}
       >
         <div
           className={cn(
-            'mx-auto max-w-6xl rounded-full border border-white/[0.08] bg-[#14141E]/65 backdrop-blur-md transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.55)]',
-            scrolled ? 'px-4 py-2' : 'px-5 py-3'
+            'mx-auto max-w-6xl rounded-full border border-white/[0.08] bg-[#14141E]/75 backdrop-blur-md transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.55)]',
+            scrolled ? 'px-3 sm:px-4 py-2' : 'px-3.5 sm:px-5 py-2.5 sm:py-3'
           )}
         >
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-2 sm:gap-3">
             {/* Logo Oficial */}
             <Link
               href="/"
@@ -200,14 +326,15 @@ export function YomiNavbar({ latestVersion = '1.2.9' }: YomiNavbarProps) {
                 })}
               </div>
 
-              {/* Botão de Download Rápido (sempre visível, inclusive no mobile) */}
+              {/* Botão de Download Rápido (sempre visível, compacto em 320px) */}
               <Link
                 href="/download"
-                className="inline-flex items-center gap-2 rounded-full bg-[var(--yomi-accent)] hover:brightness-110 text-white font-semibold text-xs sm:text-sm px-3.5 sm:px-4 py-2 transition-all shadow-[0_0_24px_var(--yomi-accent-glow)]"
+                className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full bg-[var(--yomi-accent)] hover:brightness-110 text-white font-semibold text-xs sm:text-sm px-3 sm:px-4 min-h-[40px] sm:min-h-[38px] transition-all shadow-[0_0_24px_var(--yomi-accent-glow)] shrink-0"
               >
                 <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                <span>Baixar</span>
-                <span className="rounded-full bg-black/30 px-1.5 py-0.5 text-[11px] font-mono">
+                <span className="sm:hidden">App</span>
+                <span className="hidden sm:inline">Baixar</span>
+                <span className="hidden sm:inline rounded-full bg-black/30 px-1.5 py-0.5 text-[11px] font-mono">
                   v{displayVersion}
                 </span>
               </Link>
@@ -220,7 +347,7 @@ export function YomiNavbar({ latestVersion = '1.2.9' }: YomiNavbarProps) {
                     onClick={() => setUserMenuOpen((v) => !v)}
                     aria-label="Abrir menu da conta"
                     aria-expanded={userMenuOpen}
-                    className="flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/10 p-1 pr-3 text-xs font-medium text-white transition-colors"
+                    className="flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/10 p-1 pr-2.5 sm:pr-3 min-h-[40px] text-xs font-medium text-white transition-colors"
                   >
                     {hasCustomAvatarPhoto ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -245,7 +372,7 @@ export function YomiNavbar({ latestVersion = '1.2.9' }: YomiNavbarProps) {
                         />
                       </div>
                     )}
-                    <span className="max-w-[90px] sm:max-w-[130px] truncate font-semibold">
+                    <span className="max-w-[60px] sm:max-w-[130px] truncate font-semibold">
                       {customizedName}
                     </span>
                   </button>
@@ -349,7 +476,7 @@ export function YomiNavbar({ latestVersion = '1.2.9' }: YomiNavbarProps) {
                 type="button"
                 onClick={() => setMobileMenuOpen((v) => !v)}
                 aria-label={mobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
-                className="md:hidden inline-flex items-center justify-center rounded-full border border-white/10 bg-white/[0.05] p-2 text-white/80 hover:text-white"
+                className="md:hidden inline-flex items-center justify-center rounded-full border border-white/10 bg-white/[0.05] min-h-[40px] min-w-[40px] p-2 text-white/80 hover:text-white shrink-0"
               >
                 {mobileMenuOpen ? (
                   <X className="w-4 h-4" />
@@ -362,14 +489,57 @@ export function YomiNavbar({ latestVersion = '1.2.9' }: YomiNavbarProps) {
         </div>
       </header>
 
+      {/* Navegação Inferior Mobile */}
+      <nav
+        aria-label="Navegação inferior mobile"
+        className={cn(
+          'fixed bottom-0 left-0 right-0 z-40 md:hidden border-t border-white/10 bg-[#070709]/92 backdrop-blur-xl transition-transform duration-300 pb-[env(safe-area-inset-bottom,0px)]',
+          showBottomNav
+            ? 'translate-y-0'
+            : 'translate-y-full pointer-events-none'
+        )}
+      >
+        <div className="mx-auto grid max-w-lg grid-cols-4 px-1.5 pt-1.5 pb-1">
+          {mobileBottomTabs.map((tab) => {
+            const active = tab.isActive(pathname);
+            const Icon = tab.icon;
+            return (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                aria-current={active ? 'page' : undefined}
+                className={cn(
+                  'relative flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-2xl px-1 py-1 text-[11px] font-semibold transition-colors',
+                  active
+                    ? 'text-white'
+                    : 'text-white/55 hover:text-white/85'
+                )}
+              >
+                {active && (
+                  <span
+                    className="absolute top-0.5 h-0.5 w-6 rounded-full"
+                    style={{ backgroundColor: 'var(--yomi-accent)' }}
+                  />
+                )}
+                <Icon
+                  className="h-5 w-5 transition-transform"
+                  style={active ? { color: 'var(--yomi-accent)' } : undefined}
+                />
+                <span className="truncate max-w-full">{tab.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+
       {/* Sheet Inferior Mobile */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 md:hidden">
+        <div className="fixed inset-0 z-50 md:hidden">
           <div
             className="fixed inset-0 bg-black/75"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div className="fixed bottom-0 left-0 right-0 rounded-t-3xl border-t border-white/10 bg-[#0E0E14] p-6 shadow-2xl">
+          <div className="fixed bottom-0 left-0 right-0 max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-3xl border-t border-white/10 bg-[#0E0E14] p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl">
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
             <nav className="grid gap-2">
               {activeNavLinks.map((item) => (

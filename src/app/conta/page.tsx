@@ -826,14 +826,14 @@ export default function ContaDashboardPage() {
                       value={newListName}
                       onChange={(e) => setNewListName(e.target.value)}
                       placeholder="Nome da coleção"
-                      className="rounded-xl border border-white/12 bg-black/40 px-3.5 py-2 text-xs text-white placeholder:text-white/35 focus:border-[var(--yomi-accent)] focus:outline-none"
+                      className="rounded-xl border border-white/12 bg-black/40 px-3.5 py-2 text-base sm:text-xs text-white placeholder:text-white/35 focus:border-[var(--yomi-accent)] focus:outline-none"
                     />
                     <input
                       type="text"
                       value={newListDesc}
                       onChange={(e) => setNewListDesc(e.target.value)}
                       placeholder="Descrição curta (opcional)"
-                      className="rounded-xl border border-white/12 bg-black/40 px-3.5 py-2 text-xs text-white placeholder:text-white/35 focus:border-[var(--yomi-accent)] focus:outline-none"
+                      className="rounded-xl border border-white/12 bg-black/40 px-3.5 py-2 text-base sm:text-xs text-white placeholder:text-white/35 focus:border-[var(--yomi-accent)] focus:outline-none"
                     />
                   </div>
                   <div className="flex justify-end">
@@ -937,7 +937,7 @@ export default function ContaDashboardPage() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-white/12 bg-[#0E0E14] p-6 sm:p-7 space-y-5 shadow-2xl"
+            className="w-full max-w-lg max-h-[90dvh] overflow-y-auto overscroll-contain rounded-3xl border border-white/12 bg-[#0E0E14] p-5 sm:p-7 space-y-5 shadow-2xl"
           >
             <div className="flex items-center justify-between">
               <h2 className="font-display text-xl font-bold text-white">
@@ -981,7 +981,7 @@ export default function ContaDashboardPage() {
                   maxLength={40}
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full rounded-xl border border-white/12 bg-black/40 px-3.5 py-2.5 text-sm text-white focus:border-[var(--yomi-accent)] focus:outline-none"
+                  className="w-full rounded-xl border border-white/12 bg-black/40 px-3.5 py-2.5 text-base sm:text-sm text-white focus:border-[var(--yomi-accent)] focus:outline-none"
                 />
               </div>
 
@@ -993,7 +993,7 @@ export default function ContaDashboardPage() {
                   value={editBio}
                   onChange={(e) => setEditBio(e.target.value)}
                   placeholder="Conte um pouco sobre seus gêneros e leituras..."
-                  className="w-full rounded-xl border border-white/12 bg-black/40 px-3.5 py-2.5 text-sm text-white focus:border-[var(--yomi-accent)] focus:outline-none"
+                  className="w-full rounded-xl border border-white/12 bg-black/40 px-3.5 py-2.5 text-base sm:text-sm text-white focus:border-[var(--yomi-accent)] focus:outline-none"
                 />
               </div>
 
@@ -1007,7 +1007,7 @@ export default function ContaDashboardPage() {
                   value={editGenres}
                   onChange={(e) => setEditGenres(e.target.value)}
                   placeholder="Ação, Fantasia, Seinen, Romance"
-                  className="w-full rounded-xl border border-white/12 bg-black/40 px-3.5 py-2.5 text-sm text-white focus:border-[var(--yomi-accent)] focus:outline-none"
+                  className="w-full rounded-xl border border-white/12 bg-black/40 px-3.5 py-2.5 text-base sm:text-sm text-white focus:border-[var(--yomi-accent)] focus:outline-none"
                 />
               </div>
 
@@ -1021,7 +1021,7 @@ export default function ContaDashboardPage() {
                     maxLength={24}
                     value={editMascotName}
                     onChange={(e) => setEditMascotName(e.target.value)}
-                    className="w-full rounded-xl border border-white/12 bg-black/40 px-3.5 py-2.5 text-sm text-white focus:border-[var(--yomi-accent)] focus:outline-none"
+                    className="w-full rounded-xl border border-white/12 bg-black/40 px-3.5 py-2.5 text-base sm:text-sm text-white focus:border-[var(--yomi-accent)] focus:outline-none"
                   />
                 </div>
 
@@ -1032,7 +1032,7 @@ export default function ContaDashboardPage() {
                   <select
                     value={editExpression}
                     onChange={(e) => setEditExpression(e.target.value)}
-                    className="w-full rounded-xl border border-white/12 bg-[#09090d] px-3 py-2.5 text-sm text-white focus:border-[var(--yomi-accent)] focus:outline-none"
+                    className="w-full rounded-xl border border-white/12 bg-[#09090d] px-3 py-2.5 text-base sm:text-sm text-white focus:border-[var(--yomi-accent)] focus:outline-none"
                   >
                     {BLOBATAR_EXPRESSIONS.map((item) => (
                       <option key={item.id} value={item.id}>

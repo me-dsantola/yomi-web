@@ -18,14 +18,16 @@
     color: #ffffff;
     color-scheme: dark;
     scroll-behavior: smooth;
+    overflow-x: clip;
   }
 
   body {
     background-color: #070709;
     color: #ffffff;
     font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
-    overflow-x: hidden;
+    overflow-x: clip;
     min-height: 100vh;
+    min-height: 100dvh;
   }
 
   h1,
@@ -36,6 +38,23 @@
     font-family: var(--font-outfit), system-ui, -apple-system, sans-serif;
     letter-spacing: -0.02em;
   }
+}
+
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Marquee Vertical Alternado Infinito */

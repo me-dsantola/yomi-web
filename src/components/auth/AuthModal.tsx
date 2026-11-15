@@ -99,7 +99,7 @@ export function AuthModal({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-md rounded-3xl border border-white/12 bg-[#0E0E14] p-6 sm:p-8 shadow-[0_24px_80px_rgba(0,0,0,0.85)]"
+        className="relative w-full max-w-md max-h-[90dvh] overflow-y-auto overscroll-contain rounded-3xl border border-white/12 bg-[#0E0E14] p-5 sm:p-8 shadow-[0_24px_80px_rgba(0,0,0,0.85)]"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -205,7 +205,7 @@ export function AuthModal({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Como quer ser chamado"
-                className="w-full rounded-xl border border-white/12 bg-[#14141C] px-4 py-2.5 text-sm text-white placeholder:text-white/35 focus:border-[var(--yomi-accent)] focus:outline-none"
+                className="w-full rounded-xl border border-white/12 bg-[#14141C] px-4 py-2.5 text-base sm:text-sm text-white placeholder:text-white/35 focus:border-[var(--yomi-accent)] focus:outline-none"
               />
             </div>
           )}
@@ -225,7 +225,7 @@ export function AuthModal({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="voce@exemplo.com"
-              className="w-full rounded-xl border border-white/12 bg-[#14141C] px-4 py-2.5 text-sm text-white placeholder:text-white/35 focus:border-[var(--yomi-accent)] focus:outline-none"
+              className="w-full rounded-xl border border-white/12 bg-[#14141C] px-4 py-2.5 text-base sm:text-sm text-white placeholder:text-white/35 focus:border-[var(--yomi-accent)] focus:outline-none"
             />
           </div>
 
@@ -259,7 +259,7 @@ export function AuthModal({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Mínimo de 6 caracteres"
-              className="w-full rounded-xl border border-white/12 bg-[#14141C] px-4 py-2.5 text-sm text-white placeholder:text-white/35 focus:border-[var(--yomi-accent)] focus:outline-none"
+              className="w-full rounded-xl border border-white/12 bg-[#14141C] px-4 py-2.5 text-base sm:text-sm text-white placeholder:text-white/35 focus:border-[var(--yomi-accent)] focus:outline-none"
             />
           </div>
 

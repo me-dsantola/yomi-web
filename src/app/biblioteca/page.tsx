@@ -458,7 +458,7 @@ export default function BibliotecaPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar na sua biblioteca..."
-            className="w-full rounded-2xl border border-white/10 bg-[#0E0E14] py-3.5 pl-11 pr-10 text-sm text-white placeholder:text-white/35 focus:border-[var(--yomi-accent)] focus:outline-none"
+            className="w-full rounded-2xl border border-white/10 bg-[#0E0E14] py-3.5 pl-11 pr-10 text-base sm:text-sm text-white placeholder:text-white/35 focus:border-[var(--yomi-accent)] focus:outline-none"
           />
           {searchQuery && (
             <button
@@ -932,7 +932,7 @@ export default function BibliotecaPage() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-3xl border border-white/12 bg-[#0E0E14] p-6 space-y-5 shadow-2xl"
+            className="w-full max-w-md max-h-[90dvh] overflow-y-auto overscroll-contain rounded-3xl border border-white/12 bg-[#0E0E14] p-5 sm:p-6 space-y-5 shadow-2xl"
           >
             <div className="flex items-center justify-between">
               <h2 className="font-display text-lg font-bold text-white">
@@ -941,7 +941,8 @@ export default function BibliotecaPage() {
               <button
                 type="button"
                 onClick={() => setListModalOpen(false)}
-                className="rounded-full p-1.5 text-white/50 hover:bg-white/10 hover:text-white"
+                aria-label="Fechar modal de coleção"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-white/50 hover:bg-white/10 hover:text-white"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -959,7 +960,7 @@ export default function BibliotecaPage() {
                   value={listNameInput}
                   onChange={(e) => setListNameInput(e.target.value)}
                   placeholder="Ex: Leituras da Madrugada"
-                  className="w-full rounded-xl border border-white/12 bg-black/40 px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-[var(--yomi-accent)] focus:outline-none"
+                  className="w-full rounded-xl border border-white/12 bg-black/40 px-3.5 py-2.5 text-base sm:text-sm text-white placeholder:text-white/30 focus:border-[var(--yomi-accent)] focus:outline-none"
                 />
               </div>
 
@@ -973,7 +974,7 @@ export default function BibliotecaPage() {
                   value={listDescInput}
                   onChange={(e) => setListDescInput(e.target.value)}
                   placeholder="Obras para ler antes de dormir..."
-                  className="w-full rounded-xl border border-white/12 bg-black/40 px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-[var(--yomi-accent)] focus:outline-none"
+                  className="w-full rounded-xl border border-white/12 bg-black/40 px-3.5 py-2.5 text-base sm:text-sm text-white placeholder:text-white/30 focus:border-[var(--yomi-accent)] focus:outline-none"
                 />
               </div>
 

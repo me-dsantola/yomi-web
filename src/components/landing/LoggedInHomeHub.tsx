@@ -86,10 +86,6 @@ function resolveFavoriteChapterBadge(
     return `${totalCount} caps`;
   }
 
-  const curated = cleanId ? findCuratedWorkById(cleanId) : undefined;
-  if (curated?.featuredChapterLabel) {
-    return curated.featuredChapterLabel.split('•')[0].trim();
-  }
   return null;
 }
 

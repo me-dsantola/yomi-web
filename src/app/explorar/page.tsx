@@ -98,7 +98,7 @@ export default function ExplorarPage() {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Buscar por título..."
-            className="w-full rounded-full border border-white/12 bg-[#0E0E14] py-3 pl-11 pr-4 text-sm text-white placeholder:text-white/40 focus:border-[var(--yomi-accent)] focus:outline-none"
+            className="w-full rounded-full border border-white/12 bg-[#0E0E14] py-3 pl-11 pr-4 text-base sm:text-sm text-white placeholder:text-white/40 focus:border-[var(--yomi-accent)] focus:outline-none"
           />
         </div>
       </div>
@@ -123,7 +123,7 @@ export default function ExplorarPage() {
                   setOrder(opt.id);
                   setPage(1);
                 }}
-                className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition ${
+                className={`rounded-full px-3.5 py-2 sm:py-1.5 text-xs font-medium transition ${
                   order === opt.id
                     ? "bg-[var(--yomi-accent)] text-white"
                     : "bg-white/5 text-white/65 hover:text-white"
@@ -140,7 +140,7 @@ export default function ExplorarPage() {
               setSafeOnly((v) => !v);
               setPage(1);
             }}
-            className={`inline-flex items-center rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
+            className={`inline-flex items-center rounded-full border px-3.5 py-2 sm:py-1.5 text-xs font-medium transition ${
               safeOnly
                 ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
                 : "border-amber-500/30 bg-amber-500/10 text-amber-300"
@@ -150,15 +150,15 @@ export default function ExplorarPage() {
           </button>
         </div>
 
-        {/* Genre Pills */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/[0.06]">
+        {/* Genre Pills — Horizontal Scroll on Mobile, Wrapped on Desktop */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 pt-2 border-t border-white/[0.06]">
           <button
             type="button"
             onClick={() => {
               setSelectedTag("");
               setPage(1);
             }}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+            className={`shrink-0 rounded-full px-3.5 py-1.5 sm:py-1 text-xs font-medium transition ${
               selectedTag === ""
                 ? "bg-white text-black font-semibold"
                 : "border border-white/10 bg-black/30 text-white/65 hover:text-white"
@@ -176,7 +176,7 @@ export default function ExplorarPage() {
                   setSelectedTag(active ? "" : tag.id);
                   setPage(1);
                 }}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                className={`shrink-0 rounded-full px-3.5 py-1.5 sm:py-1 text-xs font-medium transition ${
                   active
                     ? "bg-white text-black font-semibold"
                     : "border border-white/10 bg-black/30 text-white/65 hover:text-white"
@@ -284,12 +284,17 @@ export default function ExplorarPage() {
                           }}
                         />
                       </div>
-                      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 [transform:translateZ(0)] bg-gradient-to-t from-[#070709] via-[#070709]/85 to-transparent p-2.5 pt-10">
+                      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 [transform:translateZ(0)] flex flex-wrap items-center gap-1.5 bg-gradient-to-t from-[#070709] via-[#070709]/85 to-transparent p-2.5 pt-10">
                         <span className="inline-block rounded-md border border-white/10 bg-[#070709]/90 px-2 py-0.5 text-[10px] font-medium text-white/85">
                           {work.status === "completed"
                             ? "Completo"
                             : "Em lançamento"}
                         </span>
+                        {work.hasAvailableChapters === false && (
+                          <span className="inline-block rounded-md border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-200">
+                            Sem capítulos
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="flex flex-1 flex-col justify-between p-3">

@@ -13,7 +13,7 @@ export function YomiFooter() {
   }
 
   return (
-    <footer className="border-t border-white/[0.08] bg-[#070709] text-white/65">
+    <footer className="border-t border-white/[0.08] bg-[#070709] text-white/65 pb-[calc(5.25rem+env(safe-area-inset-bottom,0px))] md:pb-0">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Coluna 1: Marca */}
