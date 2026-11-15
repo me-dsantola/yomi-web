@@ -242,11 +242,11 @@ export default function QuickReaderPage() {
     readerMode !== "webtoon" && isPreviewLocked && currentPage >= visiblePages.length;
 
   return (
-    <div className="min-h-screen bg-[#070709] text-white select-none">
+    <div className="min-h-[100dvh] bg-[#070709] text-white select-none overflow-x-clip">
       {/* Top Floating HUD */}
       {hudVisible && (
-        <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-[#0E0E14]/90 backdrop-blur-md px-4 py-3">
-          <div className="mx-auto max-w-6xl flex flex-wrap items-center justify-between gap-3">
+        <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-[#0E0E14]/95 backdrop-blur-md px-3 sm:px-4 py-2 sm:py-3 pt-[max(0.5rem,env(safe-area-inset-top))]">
+          <div className="mx-auto max-w-6xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <Link
                 href={
@@ -271,7 +271,7 @@ export default function QuickReaderPage() {
             </div>
 
             {/* Reader Controls */}
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 overflow-x-auto max-w-full pb-1 sm:pb-0">
               {isPreviewLocked ? (
                 <button
                   type="button"
@@ -344,7 +344,7 @@ export default function QuickReaderPage() {
       {/* READER CANVAS */}
       <div
         onClick={() => setHudVisible((v) => !v)}
-        className="pt-16 pb-20 min-h-screen flex flex-col items-center px-3 sm:px-4"
+        className="pt-32 sm:pt-20 pb-[max(5rem,env(safe-area-inset-bottom))] min-h-[100dvh] flex flex-col items-center px-0 sm:px-4"
       >
         {readerMode === "webtoon" ? (
           /* WEBTOON CONTINUOUS VERTICAL */
@@ -407,7 +407,7 @@ export default function QuickReaderPage() {
                       src={buildPageUrl(visiblePages[currentPage])}
                       alt={`Página ${currentPage + 1}`}
                       referrerPolicy="no-referrer"
-                      className="max-h-[85vh] w-auto object-contain rounded-lg"
+                      className="block max-h-[calc(100dvh-11rem)] max-w-full h-auto w-auto object-contain sm:rounded-lg"
                     />
                   </motion.div>
                 )
