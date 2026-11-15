@@ -53,6 +53,7 @@ export function CommentsSection({
   const {
     data: comments = [],
     isLoading,
+    isError,
     refetch,
   } = useQuery<YomiComment[]>({
     queryKey: ['yomi-comments', targetId],
@@ -86,23 +87,33 @@ export function CommentsSection({
   };
 
   const handleLike = async (comment: YomiComment) => {
+    setErrorMsg(null);
     if (!user) {
       openAuthModal('login');
       return;
     }
     const currentlyLiked = comment.likedBy.includes(user.uid);
-    await toggleLikeComment({
-      commentId: comment.id,
-      targetId,
-      userId: user.uid,
-      currentlyLiked,
-    });
-    await refetch();
+    try {
+      await toggleLikeComment({
+        commentId: comment.id,
+        targetId,
+        userId: user.uid,
+        currentlyLiked,
+      });
+      await refetch();
+    } catch {
+      setErrorMsg('Não foi possível atualizar a curtida. Tente novamente.');
+    }
   };
 
   const handleDelete = async (commentId: string) => {
-    await deleteComment({ commentId, targetId });
-    await refetch();
+    setErrorMsg(null);
+    try {
+      await deleteComment({ commentId, targetId });
+      await refetch();
+    } catch {
+      setErrorMsg('Não foi possível excluir o comentário. Tente novamente.');
+    }
   };
 
   return (
@@ -183,6 +194,7 @@ export function CommentsSection({
         </div>
       )}
 
+      {errorMsg && <p role="alert" className="text-xs text-rose-400">{errorMsg}</p>}
       {/* Comments List */}
       {isLoading ? (
         <div className="space-y-3">
@@ -192,6 +204,11 @@ export function CommentsSection({
               className="h-24 animate-pulse rounded-2xl bg-white/[0.03]"
             />
           ))}
+        </div>
+      ) : isError ? (
+        <div className="py-6 text-center space-y-3">
+          <p role="alert" className="text-xs text-rose-400">Não foi possível carregar os comentários.</p>
+          <button type="button" onClick={() => refetch()} className="rounded-full border border-white/20 px-4 py-2 text-xs text-white">Tentar novamente</button>
         </div>
       ) : comments.length === 0 ? (
         <p className="py-6 text-center text-xs text-white/45">
