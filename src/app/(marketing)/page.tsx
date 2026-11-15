@@ -5,10 +5,6 @@ import {
   selectTimeWindowFeaturedWorks,
 } from '@/lib/mangadex/curatedCatalog';
 import { LoggedInHomeHub } from '@/components/landing/LoggedInHomeHub';
-import { FeaturedBillboardSection } from '@/components/landing/FeaturedBillboardSection';
-import { AlternatingVerticalMarquee } from '@/components/landing/AlternatingVerticalMarquee';
-import { BlobatarInteractiveShowcase } from '@/components/landing/BlobatarInteractiveShowcase';
-import { ExperienceBentoSection } from '@/components/landing/ExperienceBentoSection';
 
 export const revalidate = 60;
 
@@ -28,17 +24,7 @@ export default async function HomePage() {
       <LoggedInHomeHub
         release={latestRelease}
         showcaseWorks={featuredWindowWorks}
-      />
-
-      <FeaturedBillboardSection initialWorks={featuredWindowWorks} />
-
-      <AlternatingVerticalMarquee />
-
-      <BlobatarInteractiveShowcase />
-
-      <ExperienceBentoSection
-        latestVersion={latestRelease.tagName}
-        downloadUrl={primaryApkUrl}
+        primaryApkUrl={primaryApkUrl}
       />
     </div>
   );

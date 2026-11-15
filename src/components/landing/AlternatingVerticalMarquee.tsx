@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 import { CURATED_POPULAR_WORKS } from '@/lib/mangadex/curatedCatalog';
 import { buildWorkHref } from '@/lib/mangadex/api';
@@ -77,9 +77,10 @@ function MarqueeMangaCard({
         <div className="absolute inset-0 overflow-hidden [transform:translateZ(0)]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={work.coverHighResUrl || work.coverUrl}
+            src={work.coverUrl || work.coverHighResUrl}
             alt={isClone ? '' : `Capa de ${work.title}`}
             loading="lazy"
+            decoding="async"
             className={`h-full w-full object-cover object-top transition-transform duration-500 ease-out will-change-transform group-hover/card:scale-105 group-focus-within/card:scale-105 ${
               isSelected ? 'scale-105' : ''
             }`}
@@ -88,6 +89,23 @@ function MarqueeMangaCard({
               e.currentTarget.src = '/brand/icon-1024.png';
             }}
           />
+        </div>
+
+        {/* Subtle Default Title Strip (fades out when full hover overlay opens) */}
+        <div
+          aria-hidden="true"
+          className={`pointer-events-none absolute inset-x-0 bottom-0 z-[5] [transform:translateZ(0)] bg-gradient-to-t from-[#070709]/92 via-[#070709]/60 to-transparent px-3.5 pb-3 pt-10 transition-opacity duration-200 group-hover/card:opacity-0 group-focus-within/card:opacity-0 ${
+            isSelected ? 'opacity-0' : 'opacity-100'
+          }`}
+        >
+          <p className="font-display text-xs sm:text-sm font-bold text-white line-clamp-1 leading-snug">
+            {work.title}
+          </p>
+          {primaryGenres[0] && (
+            <p className="mt-0.5 text-[10px] font-medium text-white/60 truncate">
+              {primaryGenres[0].name}
+            </p>
+          )}
         </div>
 
         {/* Hover / Focus / Mobile-Tap Info Glass Overlay */}
@@ -153,7 +171,14 @@ const COLUMN_CONFIG = [
   { direction: 'down' as const, duration: '50s', mobileVisible: false },
 ];
 
-export function AlternatingVerticalMarquee() {
+export interface AlternatingVerticalMarqueeProps {
+  compactSpacing?: boolean;
+}
+
+export function AlternatingVerticalMarquee({
+  compactSpacing = false,
+}: AlternatingVerticalMarqueeProps = {}) {
+  const shouldReduceMotion = Boolean(useReducedMotion());
   const [selectedCardKey, setSelectedCardKey] = useState<string | null>(null);
 
   useEffect(() => {
@@ -182,16 +207,18 @@ export function AlternatingVerticalMarquee() {
   return (
     <section
       aria-labelledby="marquee-heading"
-      className="relative overflow-hidden py-16 sm:py-24"
+      className={`relative overflow-hidden ${
+        compactSpacing ? 'py-6 sm:py-10' : 'py-16 sm:py-24'
+      }`}
     >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 h-[480px] bg-radial from-[var(--yomi-accent-glow)] via-transparent to-transparent opacity-35 blur-3xl"
+        className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 h-[480px] bg-radial from-[var(--yomi-accent-glow)] via-transparent to-transparent opacity-15 blur-3xl"
       />
 
       <div className="relative mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-10">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
@@ -218,8 +245,14 @@ export function AlternatingVerticalMarquee() {
           </Link>
         </motion.div>
 
-        {/* 4 columns desktop / 2 columns mobile with expanded vertical height */}
-        <div className="yomi-marquee-mask relative h-[840px] sm:h-[1020px] lg:h-[1220px] xl:h-[1320px] overflow-hidden">
+        {/* 4 columns desktop / 2 columns mobile with balanced vertical height */}
+        <div
+          className={`yomi-marquee-mask relative overflow-hidden ${
+            compactSpacing
+              ? 'h-[640px] sm:h-[780px] lg:h-[920px]'
+              : 'h-[840px] sm:h-[1020px] lg:h-[1220px] xl:h-[1320px]'
+          }`}
+        >
           <div className="grid h-full grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
             {columns.map((colWorks, colIdx) => {
               const cfg = COLUMN_CONFIG[colIdx];

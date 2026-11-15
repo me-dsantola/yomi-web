@@ -33,6 +33,7 @@ import type {
 
 interface FeaturedBillboardSectionProps {
   initialWorks?: MangaDexWork[];
+  compactSpacing?: boolean;
 }
 
 const AUTOPLAY_MS = 6500;
@@ -207,6 +208,7 @@ function toCloudMangaEntry(work: MangaDexWork): YomiMangaEntry {
 
 export function FeaturedBillboardSection({
   initialWorks,
+  compactSpacing = false,
 }: FeaturedBillboardSectionProps) {
   const shouldReduceMotion = Boolean(useReducedMotion());
   const queryClient = useQueryClient();
@@ -429,7 +431,9 @@ export function FeaturedBillboardSection({
   return (
     <section
       aria-labelledby="billboard-heading"
-      className="relative py-10 sm:py-14 lg:py-16 overflow-hidden"
+      className={`relative overflow-hidden ${
+        compactSpacing ? 'py-4 sm:py-6' : 'py-10 sm:py-14 lg:py-16'
+      }`}
     >
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-10">
         {/* Compact Header Row */}
@@ -438,7 +442,9 @@ export function FeaturedBillboardSection({
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.25 }}
           transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-5 sm:mb-7 flex flex-wrap items-end justify-between gap-4"
+          className={`flex flex-wrap items-end justify-between gap-4 ${
+            compactSpacing ? 'mb-4 sm:mb-5' : 'mb-5 sm:mb-7'
+          }`}
         >
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium text-white/75 mb-2.5">

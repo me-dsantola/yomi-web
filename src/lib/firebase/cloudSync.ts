@@ -43,44 +43,70 @@ export interface ParsedYomiCloudState {
   mascotName: string;
 }
 
-export function getReaderRankInfo(totalChaptersRead: number): {
+export interface ReaderRankInfo {
   title: string;
+  levelLabel: string;
+  rankName: string;
   progress: number;
   nextGoal: number;
-} {
+  nextRankTitle: string | null;
+  chaptersRemaining: number;
+}
+
+export function getReaderRankInfo(totalChaptersRead: number): ReaderRankInfo {
   const safeCount = Math.max(0, Math.floor(totalChaptersRead));
   if (safeCount >= 100) {
     return {
       title: 'Xogun das Letras • Nível S',
+      levelLabel: 'Nível S',
+      rankName: 'Xogun das Letras',
       progress: 100,
       nextGoal: 100,
+      nextRankTitle: null,
+      chaptersRemaining: 0,
     };
   }
   if (safeCount >= 40) {
     return {
       title: 'Mestre Ronin • Nível A',
-      progress: Math.round(((safeCount - 40) / 60) * 100),
+      levelLabel: 'Nível A',
+      rankName: 'Mestre Ronin',
+      progress: Math.min(100, Math.max(0, Math.round(((safeCount - 40) / 60) * 100))),
       nextGoal: 100,
+      nextRankTitle: 'Xogun das Letras (Nível S)',
+      chaptersRemaining: 100 - safeCount,
     };
   }
   if (safeCount >= 15) {
     return {
       title: 'Espadachim Samurai • Nível B',
-      progress: Math.round(((safeCount - 15) / 25) * 100),
+      levelLabel: 'Nível B',
+      rankName: 'Espadachim Samurai',
+      progress: Math.min(100, Math.max(0, Math.round(((safeCount - 15) / 25) * 100))),
       nextGoal: 40,
+      nextRankTitle: 'Mestre Ronin (Nível A)',
+      chaptersRemaining: 40 - safeCount,
     };
   }
   if (safeCount >= 3) {
     return {
       title: 'Caçador de Capítulos • Nível C',
-      progress: Math.round(((safeCount - 3) / 12) * 100),
+      levelLabel: 'Nível C',
+      rankName: 'Caçador de Capítulos',
+      progress: Math.min(100, Math.max(0, Math.round(((safeCount - 3) / 12) * 100))),
       nextGoal: 15,
+      nextRankTitle: 'Espadachim Samurai (Nível B)',
+      chaptersRemaining: 15 - safeCount,
     };
   }
   return {
     title: 'Iniciado do Torii • Nível 1',
-    progress: Math.max(8, Math.round((safeCount / 3) * 100)),
+    levelLabel: 'Nível 1',
+    rankName: 'Iniciado do Torii',
+    progress: Math.min(100, Math.max(8, Math.round((safeCount / 3) * 100))),
     nextGoal: 3,
+    nextRankTitle: 'Caçador de Capítulos (Nível C)',
+    chaptersRemaining: 3 - safeCount,
   };
 }
 
@@ -202,18 +228,53 @@ export function parseRawCloudDocData(
     ? (historyMap.recent_reading_list as YomiRecentReadingItem[])
     : [];
 
-  const recentReads = rawRecent.map((item) => {
+  const rawRecentWithIndex = rawRecent
+    .filter(
+      (item): item is YomiRecentReadingItem =>
+        Boolean(
+          item && typeof item === 'object' && item.manga?.id && item.chapter?.id
+        )
+    )
+    .map((item, index) => {
+      const parsedTs =
+        typeof item.timestamp === 'string' && item.timestamp.trim()
+          ? Date.parse(item.timestamp)
+          : NaN;
+      return {
+        item,
+        index,
+        tsMs: Number.isFinite(parsedTs) ? parsedTs : null,
+      };
+    });
+
+  rawRecentWithIndex.sort((a, b) => {
+    if (a.tsMs !== null && b.tsMs !== null) {
+      return b.tsMs - a.tsMs || a.index - b.index;
+    }
+    if (a.tsMs !== null) return -1;
+    if (b.tsMs !== null) return 1;
+    return a.index - b.index;
+  });
+
+  const seenRecentMangaIds = new Set<string>();
+  const recentReads: Array<YomiRecentReadingItem & { lastPageRead: number }> = [];
+  for (const { item } of rawRecentWithIndex) {
+    const cleanId =
+      cleanMangaDexId(item.manga?.id ?? '') || String(item.manga?.id ?? '');
+    if (!cleanId || seenRecentMangaIds.has(cleanId)) continue;
+    seenRecentMangaIds.add(cleanId);
+
     const chId = item.chapter?.id ?? '';
     const pageVal = historyMap[`page_${chId}`];
     const lastPageRead =
       typeof pageVal === 'number' && Number.isInteger(pageVal) && pageVal >= 0
         ? pageVal
         : 0;
-    return {
+    recentReads.push({
       ...item,
       lastPageRead,
-    };
-  });
+    });
+  }
 
   const readingLists = Array.isArray(backup.settings?.user_reading_lists)
     ? backup.settings!.user_reading_lists!
