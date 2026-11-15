@@ -112,13 +112,19 @@ const ABI_DESCRIPTIONS: Record<Abi, { description: string; badge?: string }> = {
 function getGitHubHeaders(): HeadersInit {
   const headers: Record<string, string> = {
     Accept: 'application/vnd.github+json',
-    'User-Agent': 'YOMI-Web-Portal/1.2.8',
+    'User-Agent': 'YOMI-Web-Portal/1.2.9',
   };
   if (process.env.GITHUB_TOKEN) {
     headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
   }
   return headers;
 }
+
+const FALLBACK_SIZES: Record<Abi, number> = {
+  'arm64-v8a': 56098816,
+  'armeabi-v7a': 53687091,
+  x86_64: 57671680,
+};
 
 /**
  * Busca a release mais recente no servidor, cruzando os assets do GitHub
@@ -130,7 +136,7 @@ export async function getLatestRelease(
 ): Promise<LatestRelease> {
   const res = await customFetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
     headers: getGitHubHeaders(),
-    next: { revalidate: 900 },
+    next: { revalidate: 60 },
   } as RequestInit);
 
   if (!res.ok) {
@@ -144,7 +150,7 @@ export async function getLatestRelease(
   if (manifestAsset) {
     try {
       const m = await customFetch(manifestAsset.browser_download_url, {
-        next: { revalidate: 900 },
+        next: { revalidate: 60 },
       } as RequestInit);
       if (m.ok) {
         const parsed = ManifestSchema.safeParse(await m.json());
@@ -161,7 +167,7 @@ export async function getLatestRelease(
     if (shaAsset) {
       try {
         const s = await customFetch(shaAsset.browser_download_url, {
-          next: { revalidate: 900 },
+          next: { revalidate: 60 },
         } as RequestInit);
         if (s.ok) {
           const text = await s.text();
@@ -213,8 +219,66 @@ export async function getLatestRelease(
 }
 
 /**
- * Wrapper seguro que retorna um estado de fallback funcional caso a API do GitHub
- * esteja fora do ar ou com rate-limit excedido. O botão de download nunca fica quebrado.
+ * Busca o manifesto oficial `release.json` diretamente da URL estática da última release
+ * no GitHub CDN (`/releases/latest/download/release.json`), evitando rate-limit da API REST.
+ */
+export async function getLatestReleaseFromDirectManifest(
+  customFetch: typeof fetch = fetch
+): Promise<LatestRelease> {
+  const res = await customFetch(
+    `https://github.com/${REPO}/releases/latest/download/release.json`,
+    {
+      next: { revalidate: 60 },
+    } as RequestInit
+  );
+
+  if (!res.ok) {
+    throw new Error(`Direct manifest HTTP ${res.status}`);
+  }
+
+  const manifest = ManifestSchema.parse(await res.json());
+  const cleanVersion = manifest.version.replace(/^v/, '');
+  const tagUrl = `https://github.com/${REPO}/releases/tag/v${cleanVersion}`;
+  const lastModified = res.headers?.get?.('last-modified');
+  const parsedDate = lastModified ? new Date(lastModified) : null;
+  const publishedAt =
+    parsedDate && !Number.isNaN(parsedDate.getTime())
+      ? parsedDate.toISOString()
+      : '2026-11-15T00:00:00Z';
+
+  const apks: ApkInfo[] = ABIS.flatMap((abi) => {
+    const entry = manifest.apks.find((x) => x.abi === abi);
+    if (!entry) return [];
+    return [
+      {
+        abi,
+        fileName: entry.file,
+        url: `https://github.com/${REPO}/releases/download/v${cleanVersion}/${entry.file}`,
+        sizeBytes: FALLBACK_SIZES[abi],
+        sha256: entry.sha256,
+        androidVersionCode: entry.androidVersionCode,
+        description: ABI_DESCRIPTIONS[abi].description,
+        badge: ABI_DESCRIPTIONS[abi].badge,
+      },
+    ];
+  });
+
+  return {
+    version: cleanVersion,
+    build: manifest.build,
+    publishedAt,
+    notes: `### YOMI v${cleanVersion}\nVersão oficial mais recente publicada no GitHub Releases. Confira os hashes SHA-256 verificados abaixo.`,
+    htmlUrl: tagUrl,
+    certificateSha256: manifest.certificateSha256,
+    apks,
+    recommended: apks.find((a) => a.abi === 'arm64-v8a') ?? apks[0],
+    fallbackUrl: FALLBACK_URL,
+  };
+}
+
+/**
+ * Wrapper seguro que tenta primeiro a API do GitHub, depois o manifesto direto
+ * no CDN e, só em último caso, retorna o fallback estático funcional.
  */
 export async function getLatestReleaseSafe(
   customFetch: typeof fetch = fetch
@@ -222,48 +286,52 @@ export async function getLatestReleaseSafe(
   try {
     return await getLatestRelease(customFetch);
   } catch {
-    return {
-      version: '1.2.8',
-      build: 16,
-      publishedAt: '2026-11-13T21:06:19Z',
-      notes:
-        '### YOMI Estável\nMelhorias de desempenho, destaques rotativos em alta definição e sincronização aprimorada.',
-      htmlUrl: FALLBACK_URL,
-      apks: [
-        {
+    try {
+      return await getLatestReleaseFromDirectManifest(customFetch);
+    } catch {
+      return {
+        version: '1.2.9',
+        build: 17,
+        publishedAt: '2026-11-15T06:00:00Z',
+        notes:
+          '### YOMI Estável v1.2.9\nSincronização em nuvem anti-conflito por timestamp, compactação automática para o Firestore e login com e-mail e senha.',
+        htmlUrl: FALLBACK_URL,
+        apks: [
+          {
+            abi: 'arm64-v8a',
+            fileName: 'YOMI-1.2.9-arm64-v8a.apk',
+            url: `https://github.com/${REPO}/releases/download/v1.2.9/YOMI-1.2.9-arm64-v8a.apk`,
+            sizeBytes: 56098816,
+            description: ABI_DESCRIPTIONS['arm64-v8a'].description,
+            badge: ABI_DESCRIPTIONS['arm64-v8a'].badge,
+          },
+          {
+            abi: 'armeabi-v7a',
+            fileName: 'YOMI-1.2.9-armeabi-v7a.apk',
+            url: `https://github.com/${REPO}/releases/download/v1.2.9/YOMI-1.2.9-armeabi-v7a.apk`,
+            sizeBytes: 53687091,
+            description: ABI_DESCRIPTIONS['armeabi-v7a'].description,
+          },
+          {
+            abi: 'x86_64',
+            fileName: 'YOMI-1.2.9-x86_64.apk',
+            url: `https://github.com/${REPO}/releases/download/v1.2.9/YOMI-1.2.9-x86_64.apk`,
+            sizeBytes: 57671680,
+            description: ABI_DESCRIPTIONS.x86_64.description,
+          },
+        ],
+        recommended: {
           abi: 'arm64-v8a',
-          fileName: 'YOMI-1.2.8-arm64-v8a.apk',
-          url: `https://github.com/${REPO}/releases/download/v1.2.8/YOMI-1.2.8-arm64-v8a.apk`,
+          fileName: 'YOMI-1.2.9-arm64-v8a.apk',
+          url: FALLBACK_URL,
           sizeBytes: 56098816,
           description: ABI_DESCRIPTIONS['arm64-v8a'].description,
           badge: ABI_DESCRIPTIONS['arm64-v8a'].badge,
         },
-        {
-          abi: 'armeabi-v7a',
-          fileName: 'YOMI-1.2.8-armeabi-v7a.apk',
-          url: `https://github.com/${REPO}/releases/download/v1.2.8/YOMI-1.2.8-armeabi-v7a.apk`,
-          sizeBytes: 53687091,
-          description: ABI_DESCRIPTIONS['armeabi-v7a'].description,
-        },
-        {
-          abi: 'x86_64',
-          fileName: 'YOMI-1.2.8-x86_64.apk',
-          url: `https://github.com/${REPO}/releases/download/v1.2.8/YOMI-1.2.8-x86_64.apk`,
-          sizeBytes: 57671680,
-          description: ABI_DESCRIPTIONS.x86_64.description,
-        },
-      ],
-      recommended: {
-        abi: 'arm64-v8a',
-        fileName: 'YOMI-1.2.8-arm64-v8a.apk',
-        url: FALLBACK_URL,
-        sizeBytes: 56098816,
-        description: ABI_DESCRIPTIONS['arm64-v8a'].description,
-        badge: ABI_DESCRIPTIONS['arm64-v8a'].badge,
-      },
-      fallbackUrl: FALLBACK_URL,
-      isFallback: true,
-    };
+        fallbackUrl: FALLBACK_URL,
+        isFallback: true,
+      };
+    }
   }
 }
 
@@ -284,7 +352,7 @@ export function mapLatestToYomiReleaseInfo(latest: LatestRelease): YomiReleaseIn
     version: latest.version,
     tagName: `v${latest.version.replace(/^v/, '')}`,
     name: `YOMI v${latest.version.replace(/^v/, '')}`,
-    build: latest.build ?? 16,
+    build: latest.build ?? 17,
     publishedAt: latest.publishedAt,
     htmlUrl: latest.htmlUrl,
     bodyMarkdown: latest.notes,
@@ -311,7 +379,7 @@ export async function getPreviousReleases(
       `https://api.github.com/repos/${REPO}/releases?per_page=10`,
       {
         headers: getGitHubHeaders(),
-        next: { revalidate: 900 },
+        next: { revalidate: 60 },
       } as RequestInit
     );
     if (!res.ok) return [];

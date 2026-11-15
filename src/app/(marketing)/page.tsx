@@ -10,7 +10,7 @@ import { AlternatingVerticalMarquee } from '@/components/landing/AlternatingVert
 import { BlobatarInteractiveShowcase } from '@/components/landing/BlobatarInteractiveShowcase';
 import { ExperienceBentoSection } from '@/components/landing/ExperienceBentoSection';
 
-export const revalidate = 600;
+export const revalidate = 60;
 
 export default async function HomePage() {
   const latestRelease = await fetchLatestYomiRelease();

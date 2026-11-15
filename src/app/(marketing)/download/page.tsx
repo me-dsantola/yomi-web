@@ -20,7 +20,7 @@ import {
 import { SmartDownloadBox } from "@/components/download/SmartDownloadBox";
 import type { AndroidAbi } from "@/lib/device";
 
-export const revalidate = 900;
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Download Oficial Android & Notas de Versão",

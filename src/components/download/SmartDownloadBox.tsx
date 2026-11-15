@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { QRCodeSVG } from "qrcode.react";
 import {
   Download,
@@ -73,7 +74,21 @@ export function SmartDownloadBox({ release }: SmartDownloadBoxProps) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [showQrModal]);
 
-  const currentAsset = release.assets[selectedAbi] ?? release.assets["arm64-v8a"];
+  const { data: liveRelease } = useQuery<YomiReleaseInfo>({
+    queryKey: ["yomi-latest-release"],
+    queryFn: async () => {
+      const res = await fetch("/api/release/latest");
+      if (!res.ok) throw new Error("Falha ao atualizar versão");
+      return res.json();
+    },
+    initialData: release,
+    staleTime: 60_000,
+    retry: 1,
+  });
+
+  const activeRelease = liveRelease ?? release;
+  const currentAsset =
+    activeRelease.assets[selectedAbi] ?? activeRelease.assets["arm64-v8a"];
   const primaryHref = currentAsset?.downloadUrl || "#";
 
   const handleCopySha = async () => {
@@ -110,7 +125,7 @@ export function SmartDownloadBox({ release }: SmartDownloadBoxProps) {
                   href="/download"
                   className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2.5 text-xs font-medium text-white/80 transition hover:bg-white/10"
                 >
-                  Versão Android ({release.tagName})
+                  Versão Android ({activeRelease.tagName})
                 </Link>
               </div>
             </div>
@@ -127,7 +142,7 @@ export function SmartDownloadBox({ release }: SmartDownloadBoxProps) {
               <Download className="h-5 w-5 transition-transform group-hover:-translate-y-0.5" />
               <div className="text-left">
                 <div className="leading-tight">
-                  Baixar YOMI {release.tagName}
+                  Baixar YOMI {activeRelease.tagName}
                 </div>
                 <div className="text-[11px] font-normal text-white/85">
                   {ABI_DESCRIPTIONS[selectedAbi].shortLabel} •{" "}
@@ -243,7 +258,7 @@ export function SmartDownloadBox({ release }: SmartDownloadBoxProps) {
             </div>
 
             <p className="text-[11px] text-white/45">
-              YOMI {release.tagName} • {currentAsset?.sizeFormatted}
+              YOMI {activeRelease.tagName} • {currentAsset?.sizeFormatted}
             </p>
 
             <div className="mt-5 flex gap-2">

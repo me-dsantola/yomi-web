@@ -24,6 +24,7 @@ import {
   type YomiThemePreset,
 } from '@/lib/store/readerStore';
 import { cn } from '@/lib/utils';
+import type { YomiReleaseInfo } from '@/lib/github/releases';
 
 interface YomiNavbarProps {
   latestVersion?: string;
@@ -44,7 +45,7 @@ const LOGGED_IN_NAV_LINKS = [
   { href: '/download', label: 'App Android' },
 ];
 
-export function YomiNavbar({ latestVersion = '1.2.8' }: YomiNavbarProps) {
+export function YomiNavbar({ latestVersion = '1.2.9' }: YomiNavbarProps) {
   const pathname = usePathname();
   const {
     user,
@@ -55,6 +56,19 @@ export function YomiNavbar({ latestVersion = '1.2.8' }: YomiNavbarProps) {
   } = useYomiAuth();
 
   const activeNavLinks = user ? LOGGED_IN_NAV_LINKS : GUEST_NAV_LINKS;
+
+  const { data: liveRelease } = useQuery<YomiReleaseInfo>({
+    queryKey: ['yomi-latest-release'],
+    queryFn: async () => {
+      const res = await fetch('/api/release/latest');
+      if (!res.ok) throw new Error('Falha ao atualizar versão');
+      return res.json();
+    },
+    staleTime: 60_000,
+    retry: 1,
+  });
+
+  const displayVersion = liveRelease?.version || latestVersion;
 
   const { data: cloudState } = useQuery({
     queryKey: ['yomi-cloud-doc', user?.uid],
@@ -194,7 +208,7 @@ export function YomiNavbar({ latestVersion = '1.2.8' }: YomiNavbarProps) {
                 <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                 <span>Baixar</span>
                 <span className="rounded-full bg-black/30 px-1.5 py-0.5 text-[11px] font-mono">
-                  v{latestVersion}
+                  v{displayVersion}
                 </span>
               </Link>
 
