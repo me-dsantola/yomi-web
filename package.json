@@ -1,0 +1,40 @@
+{
+  "name": "yomi-web",
+  "version": "1.2.8",
+  "private": true,
+  "description": "Portal Web Oficial & Companion do aplicativo YOMI — Leitor minimalista de mangás, manhwas e webtoons para Android.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.66.0",
+    "blobatar": "^2.7.0",
+    "clsx": "^2.1.1",
+    "firebase": "^11.3.1",
+    "framer-motion": "^12.4.7",
+    "lucide-react": "^0.475.0",
+    "next": "^15.1.7",
+    "qrcode.react": "^4.2.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-markdown": "^9.0.3",
+    "rehype-sanitize": "^6.0.0",
+    "tailwind-merge": "^3.0.1",
+    "zod": "^3.24.2",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.7",
+    "@types/node": "^22.13.4",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "tailwindcss": "^4.0.7",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.6"
+  }
+}

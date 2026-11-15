@@ -1,0 +1,111 @@
+@import "tailwindcss";
+@import "blobatar/motion.css";
+@import "blobatar/gaze.css";
+
+:root {
+  --yomi-bg: #070709;
+  --yomi-surface: #0e0e14;
+  --yomi-surface-hover: #14141c;
+  --yomi-accent: #ff2a55;
+  --yomi-accent-secondary: #a11743;
+  --yomi-accent-glow: rgba(255, 42, 85, 0.35);
+  --mo-track-travel: 3px;
+}
+
+@layer base {
+  html {
+    background-color: #070709;
+    color: #ffffff;
+    color-scheme: dark;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #070709;
+    color: #ffffff;
+    font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  .font-display {
+    font-family: var(--font-outfit), system-ui, -apple-system, sans-serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* Marquee Vertical Alternado Infinito */
+@keyframes yomi-marquee-up {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, -50%, 0);
+  }
+}
+
+@keyframes yomi-marquee-down {
+  0% {
+    transform: translate3d(0, -50%, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-yomi-marquee-up {
+  animation: yomi-marquee-up var(--marquee-duration, 38s) linear infinite;
+  will-change: transform;
+}
+
+.animate-yomi-marquee-down {
+  animation: yomi-marquee-down var(--marquee-duration, 42s) linear infinite;
+  will-change: transform;
+}
+
+.yomi-marquee-mask {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 1) 7%,
+    rgba(0, 0, 0, 1) 93%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 1) 7%,
+    rgba(0, 0, 0, 1) 93%,
+    transparent 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-yomi-marquee-up,
+  .animate-yomi-marquee-down {
+    animation-play-state: paused !important;
+  }
+}
+
+/* Custom subtle scrollbars for AMOLED dark mode */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #070709;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1d1d29;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2e2e40;
+}
