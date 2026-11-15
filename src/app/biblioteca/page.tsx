@@ -15,7 +15,6 @@ import {
   Library,
   Plus,
   Search,
-  Sparkles,
   Trash2,
   X,
 } from 'lucide-react';
@@ -36,8 +35,8 @@ import {
 import {
   buildWorkHref,
   cleanMangaDexId,
-  resolveMangaEntryCoverUrl,
 } from '@/lib/mangadex/api';
+import { useResolvedCovers } from '@/lib/mangadex/useResolvedCovers';
 import { BlobatarCompanion } from '@/components/brand/BlobatarCompanion';
 
 type LibraryFilter = 'all' | 'favorites' | 'reading' | 'completed';
@@ -112,6 +111,8 @@ export default function BibliotecaPage() {
     }
     return Array.from(map.values());
   }, [cloudState]);
+
+  const { getCoverUrl } = useResolvedCovers(combinedLibrary);
 
   const filteredFavorites = useMemo(
     () => (cloudState?.favorites ?? []).filter(matchesSearch),
@@ -361,10 +362,8 @@ export default function BibliotecaPage() {
       {demoMode && !user && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-purple-500/30 bg-purple-500/10 px-5 py-3 text-xs text-purple-200">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-purple-400" />
             <span>
-              <strong>Modo Demonstração:</strong> Visualizando uma biblioteca
-              de exemplo. Entre na sua conta para salvar alterações.
+              <strong>Modo Demonstração:</strong> Biblioteca de exemplo. Entre na sua conta para salvar alterações.
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -550,7 +549,7 @@ export default function BibliotecaPage() {
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={resolveMangaEntryCoverUrl(leadContinue.manga, true)}
+                      src={getCoverUrl(leadContinue.manga, true)}
                       alt={leadContinue.manga.title}
                       className="h-28 w-20 object-cover object-top"
                       onError={(e) => {
@@ -618,7 +617,7 @@ export default function BibliotecaPage() {
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={resolveMangaEntryCoverUrl(item.manga)}
+                            src={getCoverUrl(item.manga)}
                             alt={item.manga.title}
                             className="h-16 w-12 object-cover object-top"
                             onError={(e) => {
@@ -689,7 +688,7 @@ export default function BibliotecaPage() {
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   {filteredFavorites.map((manga) => {
-                    const coverUrl = resolveMangaEntryCoverUrl(manga);
+                    const coverUrl = getCoverUrl(manga);
                     return (
                       <Link
                         key={manga.id}
@@ -756,7 +755,7 @@ export default function BibliotecaPage() {
                       <div className="aspect-[3/4] w-full overflow-hidden bg-white/5 [transform:translateZ(0)]">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={resolveMangaEntryCoverUrl(manga)}
+                          src={getCoverUrl(manga)}
                           alt={manga.title}
                           className="h-full w-full object-cover object-top transition duration-300 group-hover:scale-105"
                           onError={(e) => {
@@ -879,7 +878,7 @@ export default function BibliotecaPage() {
                                   <div className="relative aspect-[3/4] w-full overflow-hidden bg-white/5 [transform:translateZ(0)]">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
-                                      src={resolveMangaEntryCoverUrl(m)}
+                                      src={getCoverUrl(m)}
                                       alt={m.title}
                                       className="h-full w-full object-cover object-top transition duration-300 group-hover:scale-105"
                                       onError={(e) => {
@@ -899,8 +898,8 @@ export default function BibliotecaPage() {
                                       <X className="h-3.5 w-3.5" />
                                     </button>
                                     {isFav && (
-                                      <span className="absolute bottom-2 left-2 rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] text-[var(--yomi-accent)]">
-                                        ♥
+                                      <span className="absolute bottom-2 left-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-black/75 text-[var(--yomi-accent)]">
+                                        <Heart className="h-3 w-3 fill-current" />
                                       </span>
                                     )}
                                   </div>

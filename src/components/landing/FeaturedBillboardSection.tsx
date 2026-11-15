@@ -13,7 +13,6 @@ import {
   ChevronRight,
   Loader2,
   Pause,
-  Sparkles,
 } from 'lucide-react';
 import {
   CURATED_POPULAR_WORKS,
@@ -447,13 +446,6 @@ export function FeaturedBillboardSection({
           }`}
         >
           <div>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium text-white/75 mb-2.5">
-              <Sparkles
-                className="h-3.5 w-3.5 transition-colors duration-500"
-                style={{ color: dynamicAccent }}
-              />
-              Seleção Editorial
-            </span>
             <h2
               id="billboard-heading"
               className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-white"

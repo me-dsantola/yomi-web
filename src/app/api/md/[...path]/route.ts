@@ -33,7 +33,7 @@ export async function GET(
     const upstreamRes = await fetch(targetUrl, {
       headers: {
         Accept: 'application/json',
-        'User-Agent': 'YOMI-Web/1.2.9',
+        'User-Agent': 'YOMI-Web/1.2.10',
       },
       ...(isEphemeralServer
         ? { cache: 'no-store' as const }

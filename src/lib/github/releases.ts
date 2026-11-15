@@ -112,7 +112,7 @@ const ABI_DESCRIPTIONS: Record<Abi, { description: string; badge?: string }> = {
 function getGitHubHeaders(): HeadersInit {
   const headers: Record<string, string> = {
     Accept: 'application/vnd.github+json',
-    'User-Agent': 'YOMI-Web-Portal/1.2.9',
+    'User-Agent': 'YOMI-Web-Portal/1.2.10',
   };
   if (process.env.GITHUB_TOKEN) {
     headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
@@ -290,39 +290,39 @@ export async function getLatestReleaseSafe(
       return await getLatestReleaseFromDirectManifest(customFetch);
     } catch {
       return {
-        version: '1.2.9',
-        build: 17,
-        publishedAt: '2026-11-15T06:00:00Z',
+        version: '1.2.10',
+        build: 18,
+        publishedAt: '2026-11-15T18:30:00Z',
         notes:
-          '### YOMI Estável v1.2.9\nSincronização em nuvem anti-conflito por timestamp, compactação automática para o Firestore e login com e-mail e senha.',
+          '### YOMI Estável v1.2.10\nComentários sincronizados entre Web e App, carregamento mais resiliente de capítulos/capas e paridade completa de catálogo.',
         htmlUrl: FALLBACK_URL,
         apks: [
           {
             abi: 'arm64-v8a',
-            fileName: 'YOMI-1.2.9-arm64-v8a.apk',
-            url: `https://github.com/${REPO}/releases/download/v1.2.9/YOMI-1.2.9-arm64-v8a.apk`,
+            fileName: 'YOMI-1.2.10-arm64-v8a.apk',
+            url: `https://github.com/${REPO}/releases/download/v1.2.10/YOMI-1.2.10-arm64-v8a.apk`,
             sizeBytes: 56098816,
             description: ABI_DESCRIPTIONS['arm64-v8a'].description,
             badge: ABI_DESCRIPTIONS['arm64-v8a'].badge,
           },
           {
             abi: 'armeabi-v7a',
-            fileName: 'YOMI-1.2.9-armeabi-v7a.apk',
-            url: `https://github.com/${REPO}/releases/download/v1.2.9/YOMI-1.2.9-armeabi-v7a.apk`,
+            fileName: 'YOMI-1.2.10-armeabi-v7a.apk',
+            url: `https://github.com/${REPO}/releases/download/v1.2.10/YOMI-1.2.10-armeabi-v7a.apk`,
             sizeBytes: 53687091,
             description: ABI_DESCRIPTIONS['armeabi-v7a'].description,
           },
           {
             abi: 'x86_64',
-            fileName: 'YOMI-1.2.9-x86_64.apk',
-            url: `https://github.com/${REPO}/releases/download/v1.2.9/YOMI-1.2.9-x86_64.apk`,
+            fileName: 'YOMI-1.2.10-x86_64.apk',
+            url: `https://github.com/${REPO}/releases/download/v1.2.10/YOMI-1.2.10-x86_64.apk`,
             sizeBytes: 57671680,
             description: ABI_DESCRIPTIONS.x86_64.description,
           },
         ],
         recommended: {
           abi: 'arm64-v8a',
-          fileName: 'YOMI-1.2.9-arm64-v8a.apk',
+          fileName: 'YOMI-1.2.10-arm64-v8a.apk',
           url: FALLBACK_URL,
           sizeBytes: 56098816,
           description: ABI_DESCRIPTIONS['arm64-v8a'].description,

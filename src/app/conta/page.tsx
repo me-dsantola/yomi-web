@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
-  Award,
   BookOpen,
   Clock,
   Cloud,
@@ -18,7 +17,6 @@ import {
   LogOut,
   Plus,
   RefreshCw,
-  Sparkles,
   Trash2,
   X,
 } from 'lucide-react';
@@ -323,10 +321,8 @@ export default function ContaDashboardPage() {
       {demoMode && !user && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-purple-500/30 bg-purple-500/10 px-5 py-3 text-xs text-purple-200">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-purple-400" />
             <span>
-              <strong>Modo Demonstração:</strong> Exibindo uma biblioteca de
-              exemplo conectada ao YOMI Cloud.
+              <strong>Modo Demonstração:</strong> Conta de exemplo. Entre na sua conta para sincronizar.
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -544,9 +540,9 @@ export default function ContaDashboardPage() {
             <div className="md:col-span-6 rounded-2xl border border-white/[0.08] bg-[#0E0E14] p-5 space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <Award
-                    className="h-4 w-4"
-                    style={{ color: profileAccent }}
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: profileAccent }}
                   />
                   <span className="text-xs font-semibold uppercase tracking-wider text-white/55">
                     Rank do Leitor

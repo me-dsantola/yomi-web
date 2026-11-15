@@ -2,7 +2,7 @@ import React from "react";
 import {
   Smartphone,
   Moon,
-  Sparkles,
+  Palette,
   Cloud,
   WifiOff,
   Compass,
@@ -26,7 +26,7 @@ const FEATURES = [
     accent: "#8B5CF6",
   },
   {
-    icon: Sparkles,
+    icon: Palette,
     title: "Blobatar Companion",
     description:
       "Seu mascote interativo no perfil que evolui de acordo com os capítulos lidos, reage à sua cor de acento favorita e celebra suas conquistas.",

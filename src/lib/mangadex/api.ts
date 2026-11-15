@@ -189,12 +189,26 @@ export function resolveBestTitle(attr: {
   );
 }
 
-const LEGACY_ID_PREFIX_RE = /^(cmk_mdx_|hq_mdx_|ani_mdx_|mal_mdx_|cmk_title_)+/i;
+const LEGACY_ID_PREFIX_RE =
+  /^(cmk_mdx_|hq_mdx_|ani_mdx_|mal_mdx_|cmk_title_|ani_title_|mal_title_|kitsu_)+/i;
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function cleanMangaDexId(rawId: string): string {
-  return String(rawId ?? '').trim().replace(LEGACY_ID_PREFIX_RE, '');
+  const stripped = String(rawId ?? '')
+    .trim()
+    .replace(LEGACY_ID_PREFIX_RE, '');
+  if (!stripped || UUID_RE.test(stripped)) {
+    return stripped;
+  }
+  try {
+    const decoded = decodeURIComponent(stripped)
+      .trim()
+      .replace(LEGACY_ID_PREFIX_RE, '');
+    return decoded || stripped;
+  } catch {
+    return stripped;
+  }
 }
 
 export function isUuid(value: string): boolean {
@@ -560,7 +574,7 @@ export async function fetchMangaDetails(
     params.append('includes[]', 'artist');
 
     try {
-      const res = await fetch(
+      const res = await fetchWithRetry(
         `/api/md/manga/${encodeURIComponent(cleanId)}?${params.toString()}`
       );
       if (res.ok) {
@@ -1126,6 +1140,58 @@ export async function fetchMangaChapters(
   return result.chapters;
 }
 
+export async function fetchMangaCoversByIds(
+  mangaIds: string[]
+): Promise<Record<string, { coverFileName: string; coverUrl: string; title: string }>> {
+  const uniqueIds = Array.from(
+    new Set(mangaIds.map((id) => cleanMangaDexId(id)).filter((id) => isUuid(id)))
+  ).slice(0, 100);
+
+  if (uniqueIds.length === 0) return {};
+
+  const params = new URLSearchParams();
+  params.set('limit', String(uniqueIds.length));
+  params.append('includes[]', 'cover_art');
+  params.append('contentRating[]', 'safe');
+  params.append('contentRating[]', 'suggestive');
+  params.append('contentRating[]', 'erotica');
+  params.append('contentRating[]', 'pornographic');
+  for (const id of uniqueIds) {
+    params.append('ids[]', id);
+  }
+
+  try {
+    const res = await fetchWithRetry(`/api/md/manga?${params.toString()}`);
+    if (!res.ok) return {};
+    const json = await res.json();
+    const list: Array<Record<string, any>> = Array.isArray(json?.data)
+      ? json.data
+      : [];
+    const result: Record<
+      string,
+      { coverFileName: string; coverUrl: string; title: string }
+    > = {};
+    for (const entity of list) {
+      const id = String(entity?.id ?? '').trim();
+      if (!id) continue;
+      const rels: Array<Record<string, any>> = Array.isArray(entity?.relationships)
+        ? entity.relationships
+        : [];
+      const coverRel = rels.find((r) => r.type === 'cover_art');
+      const fileName = String(coverRel?.attributes?.fileName ?? '').trim();
+      if (!fileName) continue;
+      result[id] = {
+        coverFileName: fileName,
+        coverUrl: buildMangaCoverUrl(id, fileName, false),
+        title: resolveBestTitle(entity?.attributes ?? {}),
+      };
+    }
+    return result;
+  } catch {
+    return {};
+  }
+}
+
 export async function fetchChapterMetaAndPages(
   chapterId: string
 ): Promise<{
@@ -1149,7 +1215,7 @@ export async function fetchChapterMetaAndPages(
       )}?includes[]=scanlation_group&includes[]=manga`
     ).catch(() => null),
     fetchWithRetry(
-      `/api/md/at-home/server/${encodeURIComponent(cleanChapterId)}`
+      `/api/md/at-home/server/${encodeURIComponent(cleanChapterId)}?forcePort443=true`
     ),
   ]);
 
@@ -1169,6 +1235,41 @@ export async function fetchChapterMetaAndPages(
   const groupRel = rels.find((r) => r.type === 'scanlation_group');
   const mangaRel = rels.find((r) => r.type === 'manga');
   const { displayLabel } = normalizeChapterNumber(attr.chapter ?? '1');
+
+  const mangaId = mangaRel?.id ? String(mangaRel.id) : undefined;
+  let mangaTitle = mangaRel?.attributes
+    ? resolveBestTitle(mangaRel.attributes)
+    : undefined;
+  let mangaCoverFileName: string | undefined;
+
+  if (mangaId && isUuid(mangaId)) {
+    try {
+      const mangaRes = await fetchWithRetry(
+        `/api/md/manga/${encodeURIComponent(mangaId)}?includes[]=cover_art`
+      );
+      if (mangaRes.ok) {
+        const mangaJson = await mangaRes.json();
+        const mangaData = mangaJson?.data;
+        if (mangaData) {
+          const mangaRels: Array<Record<string, any>> = Array.isArray(
+            mangaData.relationships
+          )
+            ? mangaData.relationships
+            : [];
+          const coverRel = mangaRels.find((r) => r.type === 'cover_art');
+          const fileName = String(coverRel?.attributes?.fileName ?? '').trim();
+          if (fileName) {
+            mangaCoverFileName = fileName;
+          }
+          if (mangaData.attributes) {
+            mangaTitle = resolveBestTitle(mangaData.attributes);
+          }
+        }
+      }
+    } catch {
+      // O leitor continua funcionando mesmo se o lookup secundário de capa falhar
+    }
+  }
 
   return {
     pages: {
@@ -1190,10 +1291,9 @@ export async function fetchChapterMetaAndPages(
       scanlationGroup: String(
         groupRel?.attributes?.name ?? 'Grupo de Tradução'
       ),
-      mangaId: mangaRel?.id ? String(mangaRel.id) : undefined,
-      mangaTitle: mangaRel?.attributes
-        ? resolveBestTitle(mangaRel.attributes)
-        : undefined,
+      mangaId,
+      mangaTitle,
+      mangaCoverFileName,
     },
   };
 }

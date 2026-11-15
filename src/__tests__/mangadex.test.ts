@@ -1,8 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildMangaCoverUrl,
+  cleanMangaDexId,
   clearMangaChaptersCache,
+  fetchChapterMetaAndPages,
   fetchMangaChaptersWithMeta,
+  fetchMangaCoversByIds,
   fetchMangaDetails,
   MangaDexFeedError,
   matchesWorkTitle,
@@ -391,5 +394,117 @@ describe('Recuperação Paginada de Capítulos, Idiomas, Deduplicação e Erros'
     await expect(
       fetchMangaDetails('obra-inexistente-xyz', 'Obra Completamente Desconhecida')
     ).rejects.toThrow(/Obra não encontrada/i);
+  });
+
+  it('decodifica prefixos legados (ani_title_, mal_title_, cmk_mdx_) e resolve capa do mangá no leitor', async () => {
+    expect(cleanMangaDexId('cmk_mdx_0e2cb981-70c8-4229-aff7-6be966852b03')).toBe(
+      '0e2cb981-70c8-4229-aff7-6be966852b03'
+    );
+    expect(cleanMangaDexId('ani_title_Kanan-sama%20wa%20Akumade%20Choroi')).toBe(
+      'Kanan-sama wa Akumade Choroi'
+    );
+    expect(cleanMangaDexId('mal_title_One%20Piece')).toBe('One Piece');
+
+    const mangaId = '0e2cb981-70c8-4229-aff7-6be966852b03';
+    const chapterId = 'e317053c-d0cd-4fc5-8044-71c94086238d';
+    const seenUrls: string[] = [];
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        seenUrls.push(url);
+        if (url.includes(`/api/md/chapter/${chapterId}`)) {
+          return new Response(
+            JSON.stringify({
+              data: {
+                id: chapterId,
+                attributes: {
+                  chapter: '1',
+                  title: '',
+                  translatedLanguage: 'pt-br',
+                },
+                relationships: [
+                  {
+                    id: mangaId,
+                    type: 'manga',
+                    attributes: {
+                      title: { 'ja-ro': 'Kanan-sama wa Akumade Choroi' },
+                      altTitles: [{ en: 'Kanan-sama is Easy as Hell!' }],
+                    },
+                  },
+                ],
+              },
+            }),
+            { status: 200 }
+          );
+        }
+        if (url.includes(`/api/md/at-home/server/${chapterId}`)) {
+          return new Response(
+            JSON.stringify({
+              baseUrl: 'https://cmdxd98sb0x3yprd.mangadex.network',
+              chapter: {
+                hash: 'f5f84b4c',
+                data: ['1.jpg'],
+                dataSaver: ['1-s.jpg'],
+              },
+            }),
+            { status: 200 }
+          );
+        }
+        if (url.includes(`/api/md/manga/${mangaId}`)) {
+          return new Response(
+            JSON.stringify({
+              data: {
+                id: mangaId,
+                attributes: {
+                  title: { 'ja-ro': 'Kanan-sama wa Akumade Choroi' },
+                  altTitles: [{ en: 'Kanan-sama is Easy as Hell!' }],
+                },
+                relationships: [
+                  {
+                    type: 'cover_art',
+                    attributes: { fileName: '40442a51-cover.jpg' },
+                  },
+                ],
+              },
+            }),
+            { status: 200 }
+          );
+        }
+        if (url.includes('/api/md/manga?')) {
+          return new Response(
+            JSON.stringify({
+              data: [
+                {
+                  id: mangaId,
+                  attributes: {
+                    title: { 'ja-ro': 'Kanan-sama wa Akumade Choroi' },
+                    altTitles: [{ en: 'Kanan-sama is Easy as Hell!' }],
+                  },
+                  relationships: [
+                    {
+                      type: 'cover_art',
+                      attributes: { fileName: '40442a51-cover.jpg' },
+                    },
+                  ],
+                },
+              ],
+            }),
+            { status: 200 }
+          );
+        }
+        return new Response(JSON.stringify({ data: [] }), { status: 404 });
+      })
+    );
+
+    const res = await fetchChapterMetaAndPages(`cmk_mdx_${chapterId}`);
+    expect(res.chapterInfo.mangaId).toBe(mangaId);
+    expect(res.chapterInfo.mangaTitle).toBe('Kanan-sama is Easy as Hell!');
+    expect(res.chapterInfo.mangaCoverFileName).toBe('40442a51-cover.jpg');
+    expect(seenUrls.some((u) => u.includes('forcePort443=true'))).toBe(true);
+
+    const batchCovers = await fetchMangaCoversByIds([`cmk_mdx_${mangaId}`]);
+    expect(batchCovers[mangaId]?.coverFileName).toBe('40442a51-cover.jpg');
   });
 });

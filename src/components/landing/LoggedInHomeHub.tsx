@@ -7,7 +7,6 @@ import { motion, useReducedMotion } from 'framer-motion';
 import {
   AlertCircle,
   ArrowRight,
-  Award,
   BookOpen,
   Check,
   Clock,
@@ -16,7 +15,6 @@ import {
   Library,
   Loader2,
   RefreshCw,
-  Sparkles,
   User as UserIcon,
 } from 'lucide-react';
 import { useYomiAuth } from '@/components/providers/AppProviders';
@@ -37,8 +35,8 @@ import { argbIntToHex, type YomiMangaEntry } from '@/lib/backup/kuroCodec';
 import {
   buildWorkHref,
   cleanMangaDexId,
-  resolveMangaEntryCoverUrl,
 } from '@/lib/mangadex/api';
+import { useResolvedCovers } from '@/lib/mangadex/useResolvedCovers';
 import {
   CURATED_POPULAR_WORKS,
   findCuratedWorkById,
@@ -167,6 +165,15 @@ export function LoggedInHomeHub({
     );
     return curatedFallback.slice(0, 5);
   }, [discoveryGenre, recommendations.discoveryWorks]);
+
+  const coverEntriesForLookup = useMemo(
+    () => [
+      ...(cloudState?.recentReads ?? []).slice(0, 4).map((r) => r.manga),
+      ...(cloudState?.favorites ?? []).slice(0, 12),
+    ],
+    [cloudState?.recentReads, cloudState?.favorites]
+  );
+  const { getCoverUrl } = useResolvedCovers(coverEntriesForLookup);
 
   // Visitante não autenticado: mantém fluxo completo da landing page
   if (!user) {
@@ -341,7 +348,7 @@ export function LoggedInHomeHub({
                 <div className="min-w-0 flex-1 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--yomi-accent)]/30 bg-[var(--yomi-accent)]/12 px-2.5 py-0.5 text-[11px] font-semibold text-white">
-                      <Award className="h-3 w-3 text-[var(--yomi-accent)]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-[var(--yomi-accent)]" />
                       <span>{rankInfo.levelLabel}</span>
                       <span className="text-white/45">•</span>
                       <span>{rankInfo.rankName}</span>
@@ -496,7 +503,7 @@ export function LoggedInHomeHub({
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={resolveMangaEntryCoverUrl(item.manga, false)}
+                          src={getCoverUrl(item.manga, false)}
                           alt={item.manga.title}
                           loading="eager"
                           decoding="async"
@@ -683,7 +690,7 @@ export function LoggedInHomeHub({
                     <div className="relative aspect-[3/4.2] w-full overflow-hidden bg-white/5 [transform:translateZ(0)]">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={resolveMangaEntryCoverUrl(manga, false)}
+                        src={getCoverUrl(manga, false)}
                         alt={manga.title}
                         loading="lazy"
                         decoding="async"
@@ -730,11 +737,7 @@ export function LoggedInHomeHub({
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              {recommendations.hasPersonalSignals ? (
-                <Sparkles className="h-4 w-4 text-[var(--yomi-accent)]" />
-              ) : (
-                <Compass className="h-4 w-4 text-[var(--yomi-accent)]" />
-              )}
+              <Compass className="h-4 w-4 text-[var(--yomi-accent)]" />
               <h2
                 id="home-recommendations-heading"
                 className="font-display text-lg sm:text-xl lg:text-2xl font-bold text-white"
@@ -744,13 +747,12 @@ export function LoggedInHomeHub({
                   : 'Explore por gênero'}
               </h2>
             </div>
-            <p className="text-xs text-white/55">
-              {recommendations.hasPersonalSignals
-                ? `Sugestões baseadas nos seus gêneros em alta: ${recommendations.topGenres
-                    .slice(0, 3)
-                    .join(', ')}.`
-                : 'Leia ou favorite obras para destravar recomendações personalizadas.'}
-            </p>
+            {recommendations.hasPersonalSignals &&
+              recommendations.topGenres.length > 0 && (
+                <p className="text-xs text-white/50">
+                  {recommendations.topGenres.slice(0, 3).join(' · ')}
+                </p>
+              )}
           </div>
 
           <Link

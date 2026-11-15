@@ -52,7 +52,7 @@ const LOGGED_IN_NAV_LINKS = [
   { href: '/download', label: 'App Android' },
 ];
 
-export function YomiNavbar({ latestVersion = '1.2.9' }: YomiNavbarProps) {
+export function YomiNavbar({ latestVersion = '1.2.10' }: YomiNavbarProps) {
   const pathname = usePathname();
   const {
     user,
@@ -253,11 +253,11 @@ export function YomiNavbar({ latestVersion = '1.2.9' }: YomiNavbarProps) {
       >
         <div
           className={cn(
-            'mx-auto max-w-6xl rounded-full border border-white/[0.08] bg-[#14141E]/75 backdrop-blur-md transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.55)]',
-            scrolled ? 'px-3 sm:px-4 py-2' : 'px-3.5 sm:px-5 py-2.5 sm:py-3'
+            'mx-auto w-full max-w-6xl min-w-0 rounded-full border border-white/[0.08] bg-[#14141E]/75 backdrop-blur-md transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.55)]',
+            scrolled ? 'px-2.5 sm:px-4 py-1.5 sm:py-2' : 'px-3 sm:px-5 py-2 sm:py-3'
           )}
         >
-          <div className="flex items-center justify-between gap-2 sm:gap-3">
+          <div className="flex items-center justify-between gap-1.5 sm:gap-3 min-w-0">
             {/* Logo Oficial */}
             <Link
               href="/"
@@ -326,10 +326,10 @@ export function YomiNavbar({ latestVersion = '1.2.9' }: YomiNavbarProps) {
                 })}
               </div>
 
-              {/* Botão de Download Rápido (sempre visível, compacto em 320px) */}
+              {/* Botão de Download Rápido (sempre visível, compacto em 320px+) */}
               <Link
                 href="/download"
-                className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full bg-[var(--yomi-accent)] hover:brightness-110 text-white font-semibold text-xs sm:text-sm px-3 sm:px-4 min-h-[40px] sm:min-h-[38px] transition-all shadow-[0_0_24px_var(--yomi-accent-glow)] shrink-0"
+                className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full bg-[var(--yomi-accent)] hover:brightness-110 text-white font-semibold text-xs sm:text-sm px-2.5 sm:px-4 min-h-[38px] sm:min-h-[38px] transition-all shadow-[0_0_24px_var(--yomi-accent-glow)] shrink-0"
               >
                 <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                 <span className="sm:hidden">App</span>
@@ -341,13 +341,13 @@ export function YomiNavbar({ latestVersion = '1.2.9' }: YomiNavbarProps) {
 
               {/* Botão de Conta / Perfil Personalizado */}
               {user ? (
-                <div className="relative">
+                <div className="relative shrink-0">
                   <button
                     type="button"
                     onClick={() => setUserMenuOpen((v) => !v)}
                     aria-label="Abrir menu da conta"
                     aria-expanded={userMenuOpen}
-                    className="flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/10 p-1 pr-2.5 sm:pr-3 min-h-[40px] text-xs font-medium text-white transition-colors"
+                    className="flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/10 p-1 sm:pr-3 min-h-[38px] min-w-[38px] text-xs font-medium text-white transition-colors"
                   >
                     {hasCustomAvatarPhoto ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -372,7 +372,7 @@ export function YomiNavbar({ latestVersion = '1.2.9' }: YomiNavbarProps) {
                         />
                       </div>
                     )}
-                    <span className="max-w-[60px] sm:max-w-[130px] truncate font-semibold">
+                    <span className="hidden sm:inline max-w-[130px] truncate font-semibold">
                       {customizedName}
                     </span>
                   </button>
@@ -466,7 +466,8 @@ export function YomiNavbar({ latestVersion = '1.2.9' }: YomiNavbarProps) {
                     onClick={() => openAuthModal('login')}
                     className="rounded-full border border-white/15 bg-white/[0.07] hover:bg-white/12 px-3.5 py-2 text-xs font-semibold text-white transition-colors"
                   >
-                    Entrar / Criar conta
+                    <span className="sm:hidden">Entrar</span>
+                    <span className="hidden sm:inline">Entrar / Criar conta</span>
                   </button>
                 </div>
               )}

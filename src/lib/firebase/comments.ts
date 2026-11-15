@@ -420,10 +420,10 @@ export async function postComment(
 
   const now = Date.now();
   const payload: Record<string, unknown> = {
-    targetId: canonicalTargetId,
+    targetId: canonicalTargetId.slice(0, 160),
     targetType: input.targetType,
     userId,
-    userName: input.userName.trim() || 'Leitor YOMI',
+    userName: (input.userName.trim() || 'Leitor YOMI').slice(0, 100),
     text: trimmed,
     isSpoiler: Boolean(input.isSpoiler),
     likes: 0,

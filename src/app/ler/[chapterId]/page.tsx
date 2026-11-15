@@ -18,6 +18,7 @@ import {
   MessageSquare,
   X,
   BookOpen,
+  RefreshCw,
 } from "lucide-react";
 import {
   cleanMangaDexId,
@@ -39,6 +40,66 @@ import {
 } from "@/lib/mobile/readerTouchAndNav";
 
 const PREVIEW_PAGE_LIMIT = 3;
+
+function ResilientReaderImage({
+  candidates,
+  alt,
+  pageNumber,
+  loading,
+  className,
+  onReloadServer,
+}: {
+  candidates: string[];
+  alt: string;
+  pageNumber: number;
+  loading?: "eager" | "lazy";
+  className: string;
+  onReloadServer: () => void;
+}) {
+  const [attemptIdx, setAttemptIdx] = useState(0);
+  const candidatesKey = candidates.join("|");
+
+  useEffect(() => {
+    setAttemptIdx(0);
+  }, [candidatesKey]);
+
+  const currentSrc = candidates[attemptIdx];
+  if (!currentSrc) {
+    return (
+      <div className="flex min-h-[280px] w-full flex-col items-center justify-center gap-3 bg-[#09090d] px-4 py-10 text-center">
+        <AlertCircle className="h-6 w-6 text-rose-400" />
+        <p className="text-xs text-white/75">
+          Não foi possível carregar a página {pageNumber} neste servidor.
+        </p>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setAttemptIdx(0);
+            onReloadServer();
+          }}
+          className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold text-white hover:bg-white/15"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+          Recarregar servidor
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src={currentSrc}
+      alt={alt}
+      loading={loading}
+      decoding="async"
+      referrerPolicy="no-referrer"
+      onError={() => setAttemptIdx((prev) => prev + 1)}
+      className={className}
+    />
+  );
+}
 
 export default function QuickReaderPage() {
   const params = useParams<{ chapterId: string }>();
@@ -72,6 +133,8 @@ export default function QuickReaderPage() {
     queryKey: ["mangadex-chapter-pages", chapterId],
     queryFn: () => fetchChapterMetaAndPages(chapterId),
     enabled: Boolean(chapterId),
+    staleTime: 60_000,
+    retry: 2,
   });
 
   const { data: cloudState } = useQuery({
@@ -132,11 +195,39 @@ export default function QuickReaderPage() {
       : "data";
 
   const buildPageUrl = useCallback(
-    (fileName: string) => {
-      if (!data) return "";
-      return `${data.pages.baseUrl}/${qualityPath}/${data.pages.hash}/${fileName}`;
+    (fileName: string, overrideQuality?: "data" | "data-saver") => {
+      if (!data || !fileName) return "";
+      const q = overrideQuality ?? qualityPath;
+      return `${data.pages.baseUrl}/${q}/${data.pages.hash}/${fileName}`;
     },
     [data, qualityPath]
+  );
+
+  const buildPageCandidates = useCallback(
+    (pageIdx: number): string[] => {
+      if (!data) return [];
+      const primaryList =
+        qualityPath === "data-saver" ? data.pages.dataSaver : data.pages.data;
+      const altQuality: "data" | "data-saver" =
+        qualityPath === "data-saver" ? "data" : "data-saver";
+      const altList =
+        altQuality === "data-saver" ? data.pages.dataSaver : data.pages.data;
+
+      const primaryFile = primaryList[pageIdx] ?? "";
+      const altFile = altList[pageIdx] ?? "";
+      const primaryUrl = buildPageUrl(primaryFile, qualityPath);
+      const altUrl = buildPageUrl(altFile, altQuality);
+
+      const candidates = [
+        primaryUrl,
+        altUrl,
+        primaryUrl ? `/api/page?url=${encodeURIComponent(primaryUrl)}` : "",
+        altUrl ? `/api/page?url=${encodeURIComponent(altUrl)}` : "",
+      ].filter(Boolean);
+
+      return Array.from(new Set(candidates));
+    },
+    [data, qualityPath, buildPageUrl]
   );
 
   const scrollToWebtoonPage = useCallback(
@@ -322,6 +413,7 @@ export default function QuickReaderPage() {
             id: data.chapterInfo.mangaId!,
             title: data.chapterInfo.mangaTitle || "Obra",
             source: "mangadex",
+            coverFileName: data.chapterInfo.mangaCoverFileName,
           },
           chapter: {
             id: chapterId,
@@ -646,14 +738,15 @@ export default function QuickReaderPage() {
                   data-page-index={idx}
                   className="relative w-full"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={buildPageUrl(file)}
+                  <ResilientReaderImage
+                    candidates={buildPageCandidates(idx)}
                     alt={`Página ${idx + 1}`}
+                    pageNumber={idx + 1}
                     loading={idx < 3 ? "eager" : "lazy"}
-                    decoding="async"
-                    referrerPolicy="no-referrer"
                     className="block w-full h-auto m-0 p-0 select-none bg-[#09090d]"
+                    onReloadServer={() => {
+                      void refetch();
+                    }}
                   />
                   {isLastPreview && (
                     <div
@@ -759,12 +852,15 @@ export default function QuickReaderPage() {
                     }}
                     className="flex w-full items-center justify-center"
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={buildPageUrl(visiblePages[safeCurrentPage])}
+                    <ResilientReaderImage
+                      candidates={buildPageCandidates(safeCurrentPage)}
                       alt={`Página ${safeCurrentPage + 1}`}
-                      referrerPolicy="no-referrer"
+                      pageNumber={safeCurrentPage + 1}
+                      loading="eager"
                       className="max-h-[calc(100dvh-2rem)] w-auto max-w-full object-contain rounded-lg select-none"
+                      onReloadServer={() => {
+                        void refetch();
+                      }}
                     />
                   </motion.div>
                 )

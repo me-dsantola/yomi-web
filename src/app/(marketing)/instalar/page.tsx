@@ -11,7 +11,6 @@ import {
   HelpCircle,
   ChevronDown,
   Lock,
-  Sparkles,
 } from "lucide-react";
 
 const STEPS = [
@@ -111,10 +110,6 @@ export default function InstalarPage() {
     <div className="mx-auto max-w-5xl px-4 sm:px-6 pt-28 sm:pt-32 pb-20 space-y-16">
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto space-y-4">
-        <span className="inline-flex items-center gap-2 rounded-full border border-[var(--yomi-accent)]/30 bg-[var(--yomi-accent)]/10 px-3.5 py-1 text-xs font-semibold text-[var(--yomi-accent)]">
-          <Sparkles className="h-3.5 w-3.5" />
-          Guia Interativo &amp; Perguntas Frequentes
-        </span>
         <h1 className="font-display text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
           Instalação Rápida no Android
         </h1>

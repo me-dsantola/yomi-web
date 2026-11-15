@@ -12,6 +12,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import {
+  buildWorkHref,
   searchMangaCatalog,
   type SearchMangaOptions,
 } from "@/lib/mangadex/api";
@@ -267,7 +268,7 @@ export default function ExplorarPage() {
                   }}
                 >
                   <Link
-                    href={`/obra/${work.id}`}
+                    href={buildWorkHref(work.id, work.title)}
                     className="group transform-gpu [backface-visibility:hidden] flex h-full flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0E0E14] transition-all duration-300 hover:-translate-y-1.5 hover:border-white/25 hover:shadow-[0_16px_40px_-14px_rgba(0,0,0,0.85)]"
                   >
                     <div className="relative aspect-[3/4.2] w-full overflow-hidden bg-black/50 [transform:translateZ(0)]">
