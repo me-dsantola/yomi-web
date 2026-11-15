@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import {
   Download,
   Menu,
@@ -14,7 +15,10 @@ import {
   Library,
 } from 'lucide-react';
 import { YomiLogo } from '@/components/brand/YomiLogo';
+import { BlobatarCompanion } from '@/components/brand/BlobatarCompanion';
 import { useYomiAuth } from '@/components/providers/AppProviders';
+import { fetchUserCloudDoc } from '@/lib/firebase/cloudSync';
+import { argbIntToHex } from '@/lib/backup/kuroCodec';
 import {
   THEME_PRESETS,
   type YomiThemePreset,
@@ -51,6 +55,35 @@ export function YomiNavbar({ latestVersion = '1.2.8' }: YomiNavbarProps) {
   } = useYomiAuth();
 
   const activeNavLinks = user ? LOGGED_IN_NAV_LINKS : GUEST_NAV_LINKS;
+
+  const { data: cloudState } = useQuery({
+    queryKey: ['yomi-cloud-doc', user?.uid],
+    queryFn: () =>
+      fetchUserCloudDoc(user!.uid, user!.email, user!.displayName),
+    enabled: Boolean(user),
+    staleTime: 60_000,
+  });
+
+  const customizedName =
+    cloudState?.profile?.name?.trim() ||
+    cloudState?.userDisplayName?.trim() ||
+    user?.displayName?.trim() ||
+    user?.email?.split('@')[0] ||
+    'Leitor YOMI';
+
+  const hasCustomAvatarPhoto = Boolean(
+    cloudState?.avatarDataUrl && !cloudState?.profile?.useBlobatarAsAvatar
+  );
+
+  const customAccentHex = cloudState?.profile?.customAccentColor
+    ? argbIntToHex(cloudState.profile.customAccentColor)
+    : undefined;
+
+  const mascotName =
+    cloudState?.mascotName || cloudState?.profile?.blobatarName || 'Kuro';
+  const blobatarExpression =
+    cloudState?.profile?.blobatarExpression || 'happy';
+  const blobatarShape = cloudState?.profile?.blobatarShape || 'auto';
 
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -165,7 +198,7 @@ export function YomiNavbar({ latestVersion = '1.2.8' }: YomiNavbarProps) {
                 </span>
               </Link>
 
-              {/* Botão de Conta Google / Perfil */}
+              {/* Botão de Conta / Perfil Personalizado */}
               {user ? (
                 <div className="relative">
                   <button
@@ -173,39 +206,73 @@ export function YomiNavbar({ latestVersion = '1.2.8' }: YomiNavbarProps) {
                     onClick={() => setUserMenuOpen((v) => !v)}
                     aria-label="Abrir menu da conta"
                     aria-expanded={userMenuOpen}
-                    className="flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/10 p-1 pr-2.5 text-xs font-medium text-white transition-colors"
+                    className="flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] hover:bg-white/10 p-1 pr-3 text-xs font-medium text-white transition-colors"
                   >
-                    {user.photoURL ? (
+                    {hasCustomAvatarPhoto ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={user.photoURL}
-                        alt={user.displayName || 'Avatar'}
-                        className="h-6 w-6 rounded-full object-cover"
+                        src={cloudState!.avatarDataUrl!}
+                        alt={customizedName}
+                        className="h-7 w-7 rounded-full object-cover border border-white/15 shrink-0"
                       />
                     ) : (
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--yomi-accent)] text-[11px] font-bold">
-                        {(user.displayName || user.email || 'Y')
-                          .charAt(0)
-                          .toUpperCase()}
-                      </span>
+                      <div className="h-7 w-7 rounded-full overflow-hidden flex items-center justify-center shrink-0">
+                        <BlobatarCompanion
+                          mascotName={mascotName}
+                          seed={cloudState?.profile?.blobatarSeed}
+                          expression={blobatarExpression}
+                          shape={blobatarShape}
+                          accentColor={customAccentHex}
+                          size={28}
+                          background="circle"
+                          interactiveCycle={false}
+                          followPointer={false}
+                          className="rounded-full shrink-0"
+                        />
+                      </div>
                     )}
-                    <span className="hidden sm:inline max-w-[100px] truncate">
-                      {user.displayName?.split(' ')[0] || 'Conta'}
+                    <span className="max-w-[90px] sm:max-w-[130px] truncate font-semibold">
+                      {customizedName}
                     </span>
                   </button>
 
                   {userMenuOpen && (
                     <div
                       onMouseLeave={() => setUserMenuOpen(false)}
-                      className="absolute right-0 mt-2 w-56 rounded-2xl border border-white/10 bg-[#0E0E14]/95 backdrop-blur-xl p-2 shadow-2xl"
+                      className="absolute right-0 mt-2 w-60 rounded-2xl border border-white/10 bg-[#0E0E14]/95 backdrop-blur-xl p-2 shadow-2xl"
                     >
-                      <div className="px-3 py-2 border-b border-white/[0.07]">
-                        <p className="text-xs font-semibold text-white truncate">
-                          {user.displayName || 'Leitor YOMI'}
-                        </p>
-                        <p className="text-[11px] text-white/50 truncate">
-                          {user.email}
-                        </p>
+                      <div className="flex items-center gap-2.5 px-3 py-2.5 border-b border-white/[0.07]">
+                        {hasCustomAvatarPhoto ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={cloudState!.avatarDataUrl!}
+                            alt={customizedName}
+                            className="h-8 w-8 rounded-full object-cover border border-white/15 shrink-0"
+                          />
+                        ) : (
+                          <div className="h-8 w-8 rounded-full overflow-hidden flex items-center justify-center shrink-0">
+                            <BlobatarCompanion
+                              mascotName={mascotName}
+                              seed={cloudState?.profile?.blobatarSeed}
+                              expression={blobatarExpression}
+                              shape={blobatarShape}
+                              accentColor={customAccentHex}
+                              size={32}
+                              background="circle"
+                              interactiveCycle={false}
+                              followPointer={false}
+                              className="rounded-full shrink-0"
+                            />
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold text-white truncate">
+                            {customizedName}
+                          </p>
+                          <p className="text-[11px] text-white/50 truncate">
+                            {user.email || `Mascote ${mascotName}`}
+                          </p>
+                        </div>
                       </div>
                       <Link
                         href="/biblioteca"

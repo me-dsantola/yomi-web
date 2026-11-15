@@ -1,34 +1,77 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 import { CURATED_POPULAR_WORKS } from '@/lib/mangadex/curatedCatalog';
+import { buildWorkHref } from '@/lib/mangadex/api';
 import type { MangaDexWork } from '@/lib/mangadex/types';
 
 interface MarqueeCardProps {
   work: MangaDexWork;
+  cardKey: string;
+  isSelected: boolean;
+  onActivateCard: (key: string) => void;
   isClone?: boolean;
 }
 
-function MarqueeMangaCard({ work, isClone = false }: MarqueeCardProps) {
+function MarqueeMangaCard({
+  work,
+  cardKey,
+  isSelected,
+  onActivateCard,
+  isClone = false,
+}: MarqueeCardProps) {
   const accent = work.accentColor ?? '#8B5CF6';
   const primaryGenres = work.tags.slice(0, 2);
+  const lastPointerTypeRef = useRef<string>('');
+
+  const handleCardClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const isTouchOrMobile =
+      lastPointerTypeRef.current === 'touch' ||
+      (typeof window !== 'undefined' &&
+        window.matchMedia('(hover: none), (pointer: coarse), (max-width: 768px)')
+          .matches);
+
+    if (isTouchOrMobile && !isSelected) {
+      e.preventDefault();
+      e.stopPropagation();
+      onActivateCard(cardKey);
+    }
+  };
 
   return (
     <div className="pb-4 sm:pb-5">
       <Link
-        href={`/obra/${work.id}`}
+        href={buildWorkHref(work.id, work.title)}
+        data-marquee-card="true"
         tabIndex={isClone ? -1 : 0}
         aria-hidden={isClone ? true : undefined}
-        aria-label={work.title}
+        aria-label={
+          isSelected
+            ? `${work.title} — toque novamente para abrir a obra`
+            : work.title
+        }
+        onPointerDown={(e) => {
+          lastPointerTypeRef.current = e.pointerType;
+        }}
+        onTouchStart={() => {
+          lastPointerTypeRef.current = 'touch';
+        }}
+        onClick={handleCardClick}
         style={
           {
             '--card-accent': accent,
+            borderColor: isSelected ? accent : undefined,
+            boxShadow: isSelected
+              ? `0 22px 50px -14px ${accent}`
+              : undefined,
           } as React.CSSProperties
         }
-        className="group/card transform-gpu [backface-visibility:hidden] relative block aspect-[3/4.2] w-full overflow-hidden rounded-2xl sm:rounded-3xl border border-white/10 bg-[#0D0D14] shadow-xl transition-all duration-300 ease-out hover:scale-[1.025] hover:border-white/30 hover:shadow-[0_22px_50px_-14px_var(--card-accent)] hover:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+        className={`group/card transform-gpu [backface-visibility:hidden] relative block aspect-[3/4.2] w-full overflow-hidden rounded-2xl sm:rounded-3xl border bg-[#0D0D14] shadow-xl transition-all duration-300 ease-out hover:scale-[1.025] hover:border-white/30 hover:shadow-[0_22px_50px_-14px_var(--card-accent)] hover:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 ${
+          isSelected ? 'scale-[1.025] z-10' : 'border-white/10'
+        }`}
       >
         {/* Full Cover Art (isolated compositing layer prevents overlay flicker) */}
         <div className="absolute inset-0 overflow-hidden [transform:translateZ(0)]">
@@ -37,7 +80,9 @@ function MarqueeMangaCard({ work, isClone = false }: MarqueeCardProps) {
             src={work.coverHighResUrl || work.coverUrl}
             alt={isClone ? '' : `Capa de ${work.title}`}
             loading="lazy"
-            className="h-full w-full object-cover object-top transition-transform duration-500 ease-out will-change-transform group-hover/card:scale-105 group-focus-within/card:scale-105"
+            className={`h-full w-full object-cover object-top transition-transform duration-500 ease-out will-change-transform group-hover/card:scale-105 group-focus-within/card:scale-105 ${
+              isSelected ? 'scale-105' : ''
+            }`}
             onError={(e) => {
               e.currentTarget.onerror = null;
               e.currentTarget.src = '/brand/icon-1024.png';
@@ -45,8 +90,14 @@ function MarqueeMangaCard({ work, isClone = false }: MarqueeCardProps) {
           />
         </div>
 
-        {/* Hover / Focus Info Glass Overlay */}
-        <div className="pointer-events-none absolute inset-0 z-10 [transform:translateZ(0)] flex flex-col justify-end bg-gradient-to-t from-[#070709] via-[#070709]/88 to-transparent p-4 sm:p-5 opacity-0 translate-y-3 transition-all duration-300 ease-out group-hover/card:opacity-100 group-hover/card:translate-y-0 group-focus-within/card:opacity-100 group-focus-within/card:translate-y-0">
+        {/* Hover / Focus / Mobile-Tap Info Glass Overlay */}
+        <div
+          className={`pointer-events-none absolute inset-0 z-10 [transform:translateZ(0)] flex flex-col justify-end bg-gradient-to-t from-[#070709] via-[#070709]/88 to-transparent p-3.5 sm:p-5 transition-all duration-300 ease-out group-hover/card:opacity-100 group-hover/card:translate-y-0 group-focus-within/card:opacity-100 group-focus-within/card:translate-y-0 ${
+            isSelected
+              ? 'opacity-100 translate-y-0'
+              : 'opacity-0 translate-y-3'
+          }`}
+        >
           <div className="flex items-center justify-between gap-2 mb-2">
             <span
               className="inline-flex items-center rounded-full border border-white/15 bg-[#070709]/90 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/95"
@@ -59,7 +110,7 @@ function MarqueeMangaCard({ work, isClone = false }: MarqueeCardProps) {
             </span>
           </div>
 
-          <h3 className="font-display text-base sm:text-lg font-bold leading-snug tracking-tight text-white line-clamp-2">
+          <h3 className="font-display text-sm sm:text-lg font-bold leading-snug tracking-tight text-white line-clamp-2">
             {work.title}
           </h3>
 
@@ -68,7 +119,7 @@ function MarqueeMangaCard({ work, isClone = false }: MarqueeCardProps) {
             {work.year ? ` · ${work.year}` : ''}
           </p>
 
-          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
             {primaryGenres.map((tag) => (
               <span
                 key={tag.id}
@@ -82,6 +133,13 @@ function MarqueeMangaCard({ work, isClone = false }: MarqueeCardProps) {
           <p className="mt-2 text-[11px] leading-relaxed text-white/65 line-clamp-2">
             {work.description}
           </p>
+
+          {isSelected && (
+            <div className="mt-2.5 inline-flex items-center justify-between rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] font-semibold text-white">
+              <span>Toque novamente para abrir</span>
+              <span>→</span>
+            </div>
+          )}
         </div>
       </Link>
     </div>
@@ -96,6 +154,26 @@ const COLUMN_CONFIG = [
 ];
 
 export function AlternatingVerticalMarquee() {
+  const [selectedCardKey, setSelectedCardKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!selectedCardKey) return;
+    const handleOutsidePointerDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target?.closest('[data-marquee-card="true"]')) {
+        setSelectedCardKey(null);
+      }
+    };
+    document.addEventListener('pointerdown', handleOutsidePointerDown, true);
+    return () => {
+      document.removeEventListener(
+        'pointerdown',
+        handleOutsidePointerDown,
+        true
+      );
+    };
+  }, [selectedCardKey]);
+
   const columns: MangaDexWork[][] = [[], [], [], []];
   CURATED_POPULAR_WORKS.forEach((work, index) => {
     columns[index % 4].push(work);
@@ -149,6 +227,9 @@ export function AlternatingVerticalMarquee() {
                 cfg.direction === 'up'
                   ? 'animate-yomi-marquee-up'
                   : 'animate-yomi-marquee-down';
+              const colHasSelection = Boolean(
+                selectedCardKey && selectedCardKey.startsWith(`col-${colIdx}-`)
+              );
 
               return (
                 <div
@@ -163,18 +244,35 @@ export function AlternatingVerticalMarquee() {
                         '--marquee-duration': cfg.duration,
                       } as React.CSSProperties
                     }
-                    className={`${animClass} flex flex-col group-hover/col:[animation-play-state:paused] focus-within:[animation-play-state:paused]`}
+                    className={`${animClass} flex flex-col group-hover/col:[animation-play-state:paused] focus-within:[animation-play-state:paused] ${
+                      colHasSelection ? '[animation-play-state:paused]' : ''
+                    }`}
                   >
-                    {colWorks.map((work) => (
-                      <MarqueeMangaCard key={`a-${work.id}`} work={work} />
-                    ))}
-                    {colWorks.map((work) => (
-                      <MarqueeMangaCard
-                        key={`b-${work.id}`}
-                        work={work}
-                        isClone
-                      />
-                    ))}
+                    {colWorks.map((work) => {
+                      const key = `col-${colIdx}-a-${work.id}`;
+                      return (
+                        <MarqueeMangaCard
+                          key={key}
+                          cardKey={key}
+                          work={work}
+                          isSelected={selectedCardKey === key}
+                          onActivateCard={setSelectedCardKey}
+                        />
+                      );
+                    })}
+                    {colWorks.map((work) => {
+                      const key = `col-${colIdx}-b-${work.id}`;
+                      return (
+                        <MarqueeMangaCard
+                          key={key}
+                          cardKey={key}
+                          work={work}
+                          isSelected={selectedCardKey === key}
+                          onActivateCard={setSelectedCardKey}
+                          isClone
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               );
