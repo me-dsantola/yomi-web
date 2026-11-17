@@ -21,3 +21,14 @@ Start with aura colors, a scarf and a small floating star. A hat should attach t
 ## Validation
 
 TypeScript and production build; existing web tests; interrupted state transition, deterministic sampling and invalid gaze tests; browser QA of contexts, palettes, reduced motion and mobile layout. Account persistence flows were preserved, not exercised against real user data. A physical low-end device benchmark remains to be done.
+
+
+## Shape persistence audit — revision 03
+
+All 15 states now preserve the selected 64-sample radial profile. State profiles from the original video are motion references only; they do not replace the character with a circle, triangle, glyph or dot. Pose rotation/translation and bounded (0.92–1.08) squash/stretch remain available. Each transition blends corresponding vertices. The eye fitting table uses this same personalized geometry.
+
+Changing shape midway through a morph snapshots the displayed radii and eye correction instead of restarting from the previous target. CyclePlayer uses monotonic absolute time and blended restart at block boundaries, including repeated blocks and wraps; reset is reserved for explicit seeking. No cycle or contextual return clears the selected shape.
+
+The Flutter atlas v2 stores state motion separately from catalog profiles. Native playback reconstructs each contour from the selected profile and interpolated pose, and fits eyes to that profile. A shape change keeps the current action clock and blends from the currently drawn frame. This avoids a separate large animation atlas per shape. The generated asset is approximately 2.5 MB.
+
+Regression coverage: eight shapes across fifteen states and multiple internal timestamps; every pair of state transitions and both sides of the blend cutoff; interrupted shape changes; cycle wraps/repeated blocks; native selected-shape differentiation and widget transitions.

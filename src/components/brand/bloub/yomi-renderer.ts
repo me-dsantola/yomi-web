@@ -70,7 +70,9 @@ export class YomiBloub {
  private screenListener=()=>{this.last=0;this.sync();};
  private move=(e:PointerEvent)=>{if(e.pointerType!=='touch')this.pointer={x:e.clientX,y:e.clientY};};
  private leave=()=>{this.pointer=null;this.engine.setLook(null,this.clock);};
- constructor(private host:HTMLElement){
+ constructor(private host:HTMLElement, initial:{shape?:string;expression?:string}={}){
+  if(initial.shape&&SHAPE_BY_ID.has(initial.shape))this.shape=initial.shape;
+  if(initial.expression&&EXPRESSION_BY_ID.has(initial.expression))this.expression=initial.expression;
   this.engine=new BotEngine(RAYON,'idle',SHAPE_BY_ID.get(this.shape)!.radii,EXPRESSION_BY_ID.get(this.expression)!);
   this.svg=node('svg',{viewBox:`${-DEMI_VIEWBOX} ${-DEMI_VIEWBOX} ${2*DEMI_VIEWBOX} ${2*DEMI_VIEWBOX}`,role:'img','aria-label':'Mascote experimental Yomi, baseado no motor Bloub'}) as SVGSVGElement;
   this.svg.style.cssText='display:block;width:100%;height:100%;overflow:visible';
