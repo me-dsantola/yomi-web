@@ -120,14 +120,14 @@ export default function BackupManagerPage() {
             className="inline-flex items-center gap-1.5 text-xs text-white/60 hover:text-white"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            Voltar ao Companion Dashboard
+            Voltar ao Perfil
           </Link>
           <h1 className="font-display text-3xl font-extrabold text-white">
-            Gerenciador de Backups (.kuro)
+            Backups (.kuro)
           </h1>
           <p className="text-xs sm:text-sm text-white/60">
-            Exporte sua biblioteca da nuvem para um arquivo portátil ou valide e restaure um backup{" "}
-            <code>.kuro</code> no seu perfil.
+            Exporte sua biblioteca ou restaure um arquivo{" "}
+            <code>.kuro</code>.
           </p>
         </div>
       </div>

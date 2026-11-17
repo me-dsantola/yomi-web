@@ -121,8 +121,8 @@ export function AuthModal({
           </h2>
           <p className="text-xs text-white/55">
             {mode === 'login'
-              ? 'Acesse capítulos completos, comentários e sua nuvem.'
-              : 'Leia sem limites no navegador e sincronize em qualquer aparelho.'}
+              ? 'Entre para comentar, favoritar e sincronizar na nuvem.'
+              : 'Salve sua biblioteca, progresso e comentários em qualquer aparelho.'}
           </p>
         </div>
 

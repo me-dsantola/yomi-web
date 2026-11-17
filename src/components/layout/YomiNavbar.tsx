@@ -31,28 +31,27 @@ import {
   type MobileScrollDirection,
 } from '@/lib/mobile/readerTouchAndNav';
 import { cn } from '@/lib/utils';
-import type { YomiReleaseInfo } from '@/lib/github/releases';
+import { useLiveRelease } from '@/lib/github/useLiveRelease';
 
 interface YomiNavbarProps {
   latestVersion?: string;
 }
 
 const GUEST_NAV_LINKS = [
-  { href: '/#recursos', label: 'Recursos' },
   { href: '/explorar', label: 'Catálogo' },
-  { href: '/instalar', label: 'Instalação' },
-  { href: '/download', label: 'Novidades' },
+  { href: '/download', label: 'Download' },
+  { href: '/instalar', label: 'Como Instalar' },
 ];
 
 const LOGGED_IN_NAV_LINKS = [
   { href: '/', label: 'Início' },
   { href: '/explorar', label: 'Catálogo' },
   { href: '/biblioteca', label: 'Biblioteca' },
-  { href: '/conta', label: 'Meu Perfil' },
-  { href: '/download', label: 'App Android' },
+  { href: '/conta', label: 'Perfil' },
+  { href: '/download', label: 'Download' },
 ];
 
-export function YomiNavbar({ latestVersion = '1.2.10' }: YomiNavbarProps) {
+export function YomiNavbar({ latestVersion = '1.2.11' }: YomiNavbarProps) {
   const pathname = usePathname();
   const {
     user,
@@ -64,16 +63,7 @@ export function YomiNavbar({ latestVersion = '1.2.10' }: YomiNavbarProps) {
 
   const activeNavLinks = user ? LOGGED_IN_NAV_LINKS : GUEST_NAV_LINKS;
 
-  const { data: liveRelease } = useQuery<YomiReleaseInfo>({
-    queryKey: ['yomi-latest-release'],
-    queryFn: async () => {
-      const res = await fetch('/api/release/latest');
-      if (!res.ok) throw new Error('Falha ao atualizar versão');
-      return res.json();
-    },
-    staleTime: 60_000,
-    retry: 1,
-  });
+  const liveRelease = useLiveRelease();
 
   const displayVersion = liveRelease?.version || latestVersion;
 

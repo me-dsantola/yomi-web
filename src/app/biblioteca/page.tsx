@@ -319,9 +319,8 @@ export default function BibliotecaPage() {
               Minha Biblioteca
             </h1>
             <p className="text-sm sm:text-base text-white/60 leading-relaxed">
-              Entre com sua conta para acessar seus favoritos, coleções
-              personalizadas e continuar lendo exatamente de onde parou — tudo
-              sincronizado com o app YOMI.
+              Entre com sua conta para acessar seus favoritos, coleções e
+              histórico sincronizados com o app YOMI.
             </p>
           </div>
 

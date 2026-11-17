@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight, Download } from 'lucide-react';
 import { useYomiAuth } from '@/components/providers/AppProviders';
+import { useLiveRelease } from '@/lib/github/useLiveRelease';
 
 export function ExperienceBentoSection({
   latestVersion,
@@ -14,10 +15,15 @@ export function ExperienceBentoSection({
   downloadUrl: string;
 }) {
   const { user } = useYomiAuth();
+  const liveRelease = useLiveRelease();
 
   if (user) {
     return null;
   }
+
+  const activeVersion = liveRelease?.tagName || latestVersion;
+  const activeDownloadUrl =
+    liveRelease?.assets['arm64-v8a']?.downloadUrl || downloadUrl;
 
   return (
     <>
@@ -30,10 +36,10 @@ export function ExperienceBentoSection({
           className="mb-8 max-w-2xl"
         >
           <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium text-white/70 mb-3">
-            Ecossistema
+            YOMI
           </span>
           <h2 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-white">
-            Pensado para quem lê todos os dias.
+            Feito para ler sem distrações.
           </h2>
         </motion.div>
 
@@ -62,7 +68,7 @@ export function ExperienceBentoSection({
                 Sincronia Instantânea
               </h3>
               <p className="mt-2 text-sm text-white/60 leading-relaxed">
-                Comece um capítulo no celular e continue da mesma página no navegador, com favoritos e coleções sempre salvos.
+                Comece no celular e continue da mesma página no navegador.
               </p>
             </div>
           </motion.div>
@@ -80,7 +86,7 @@ export function ExperienceBentoSection({
               </span>
               <div className="flex items-center gap-1.5">
                 <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[11px] font-medium text-white/75">
-                  Rolagem sem frestas
+                  Rolagem contínua
                 </span>
                 <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[11px] font-medium text-white/75">
                   RTL / LTR
@@ -94,7 +100,7 @@ export function ExperienceBentoSection({
                   Leitura Sob Medida
                 </h3>
                 <p className="mt-2 text-sm text-white/60 leading-relaxed">
-                  Fluxo vertical contínuo para webtoons ou páginas clássicas com pré-carregamento inteligente para nunca travar.
+                  Modo webtoon vertical ou paginado clássico para mangás.
                 </p>
               </div>
               <div
@@ -117,10 +123,10 @@ export function ExperienceBentoSection({
           >
             <div>
               <h3 className="font-display text-xl font-bold text-white">
-                Zero anúncios, leitura offline no Android e backup portátil
+                Zero anúncios, leitura offline no Android e backup .kuro
               </h3>
               <p className="mt-1 text-sm text-white/60">
-                Sem pop-ups ou rastreadores. Baixe capítulos para ler sem internet no celular e leve sua biblioteca em arquivo .kuro.
+                Baixe capítulos no celular para ler offline e exporte sua biblioteca quando quiser.
               </p>
             </div>
 
@@ -128,7 +134,7 @@ export function ExperienceBentoSection({
               href="/conta"
               className="group shrink-0 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.05] px-5 py-3 text-sm font-medium text-white transition hover:border-white/30 hover:bg-white/10"
             >
-              <span>Acessar Minha Conta</span>
+              <span>Minha Conta</span>
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
           </motion.div>
@@ -150,27 +156,27 @@ export function ExperienceBentoSection({
 
           <div className="relative z-10 mx-auto max-w-2xl space-y-6">
             <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1 text-xs font-medium text-white/75">
-              Gratuito · Android 8.0+ &amp; Web
+              Android 8.0+ &amp; Web
             </span>
 
             <h2 className="font-display text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
-              Sua próxima leitura começa agora.
+              Comece a ler agora.
             </h2>
 
             <div className="flex flex-wrap items-center justify-center gap-3.5 pt-2">
               <a
-                href={downloadUrl}
+                href={activeDownloadUrl}
                 className="inline-flex items-center gap-2.5 rounded-full bg-[var(--yomi-accent)] px-7 py-4 text-sm sm:text-base font-semibold text-white shadow-[0_0_32px_var(--yomi-accent-glow)] transition-all hover:brightness-110 hover:scale-[1.02]"
               >
                 <Download className="h-4 w-4" />
-                <span>Baixar YOMI {latestVersion}</span>
+                <span>Baixar YOMI {activeVersion}</span>
               </a>
 
               <Link
                 href="/explorar"
                 className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.05] px-7 py-4 text-sm sm:text-base font-medium text-white/90 transition hover:border-white/30 hover:bg-white/10"
               >
-                <span>Abrir Catálogo Web</span>
+                <span>Abrir Catálogo</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>

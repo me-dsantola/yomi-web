@@ -13,58 +13,58 @@ import {
 const FEATURES = [
   {
     icon: Smartphone,
-    title: "Leitor Híbrido (Mangá & Webtoon)",
+    title: "Mangá & Webtoon",
     description:
-      "Rolagem vertical contínua sem frestas para Manhwas e Webtoons, ou modo paginado (RTL/LTR) com zoom duplo-toque para Mangás tradicionais.",
+      "Rolagem vertical contínua ou modo paginado (RTL/LTR) com zoom duplo-toque.",
     accent: "#FF2A55",
   },
   {
     icon: Moon,
-    title: "Estética AMOLED Pura",
+    title: "Preto AMOLED",
     description:
-      "Preto absoluto (#070709) que desliga pixels em telas OLED, economiza bateria real e elimina a fadiga visual na leitura noturna.",
+      "Fundo escuro puro (#070709) pensado para conforto visual na leitura noturna.",
     accent: "#8B5CF6",
   },
   {
     icon: Palette,
-    title: "Blobatar Companion",
+    title: "Blobatar",
     description:
-      "Seu mascote interativo no perfil que evolui de acordo com os capítulos lidos, reage à sua cor de acento favorita e celebra suas conquistas.",
+      "Mascote personalizável no perfil que evolui conforme você lê novos capítulos.",
     accent: "#06B6D4",
   },
   {
     icon: Cloud,
-    title: "Cloud Sync & Backups .kuro",
+    title: "Nuvem & Backup .kuro",
     description:
-      "Sincronização na nuvem via Google (Firebase) compartilhada com este portal web e exportação/importação de arquivos .kuro v4.",
+      "Sincronização entre celular e navegador, além de exportação portátil .kuro v4.",
     accent: "#10B981",
   },
   {
     icon: WifiOff,
-    title: "Downloads Offline no Android",
+    title: "Leitura Offline",
     description:
-      "Baixe capítulos completos em fila no celular para ler no metrô, avião ou onde não houver conexão.",
+      "Baixe capítulos no app Android para ler quando estiver sem conexão.",
     accent: "#FF2A55",
   },
   {
     icon: Compass,
-    title: "Descoberta Inteligente",
+    title: "Catálogo Integrado",
     description:
-      "Destaques rotativos com 5 obras populares aleatórias a cada ciclo, filtros por demografia e busca multilíngue integrada ao MangaDex.",
+      "Busca rápida por título, filtros de gênero e idioma integrados ao MangaDex.",
     accent: "#8B5CF6",
   },
   {
     icon: FolderHeart,
-    title: "Coleções Personalizadas",
+    title: "Coleções",
     description:
-      "Organize suas leituras em listas customizadas além dos favoritos, com histórico automático por página e capítulo.",
+      "Organize suas obras em listas personalizadas, favoritos e histórico.",
     accent: "#06B6D4",
   },
   {
     icon: ShieldCheck,
-    title: "Zero Anúncios, 100% Gratuito",
+    title: "Zero Anúncios",
     description:
-      "Sem pop-ups invasivos, sem rastreadores comerciais e com verificação pública de integridade SHA-256 em cada APK.",
+      "Gratuito, sem pop-ups invasivos e com verificação SHA-256 oficial.",
     accent: "#10B981",
   },
 ];
@@ -74,14 +74,11 @@ export function FeaturesGrid() {
     <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20">
       <div className="mx-auto max-w-2xl text-center">
         <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1 text-xs font-medium text-white/75">
-          Engenharia Focada em Leitura
+          Recursos
         </span>
         <h2 className="mt-4 font-display text-3xl sm:text-4xl font-bold tracking-tight text-white">
-          Tudo o que importa na página. Nada no seu caminho.
+          Tudo o que importa na página. Nada no caminho.
         </h2>
-        <p className="mt-3 text-sm sm:text-base text-white/60">
-          Leitura fluida a 120Hz no Android integrada em tempo real ao portal web.
-        </p>
       </div>
 
       <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">

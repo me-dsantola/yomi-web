@@ -6,10 +6,10 @@ import {
 } from '@/lib/mangadex/curatedCatalog';
 import { LoggedInHomeHub } from '@/components/landing/LoggedInHomeHub';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const latestRelease = await fetchLatestYomiRelease();
+  const latestRelease = await fetchLatestYomiRelease(fetch, { noStore: true });
   const featuredWindowWorks = selectTimeWindowFeaturedWorks(
     CURATED_POPULAR_WORKS,
     5,

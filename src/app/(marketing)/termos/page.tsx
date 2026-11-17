@@ -4,9 +4,9 @@ import Link from "next/link";
 import { FileText } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Termos de Uso & Direitos Autorais",
+  title: "Termos de Uso",
   description:
-    "Termos de Uso, isenção sobre conteúdo de terceiros, diretrizes de direitos autorais e acessibilidade do YOMI.",
+    "Termos de Uso e diretrizes de conteúdo de terceiros do YOMI.",
 };
 
 export default function TermosPage() {
@@ -21,26 +21,26 @@ export default function TermosPage() {
           Termos de Uso
         </h1>
         <p className="text-xs text-white/50">
-          Última atualização: Novembro de 2026
+          Atualizado em novembro de 2026
         </p>
       </div>
 
       <div className="space-y-6 text-sm leading-relaxed text-white/75">
         <section className="space-y-2">
           <h2 className="font-display text-lg font-bold text-white">
-            1. Objeto e Natureza da Plataforma
+            1. Objeto
           </h2>
           <p>
-            O <strong>YOMI</strong> disponibiliza gratuitamente uma interface moderna de leitura e organização pessoal na web e no Android, operando de forma análoga a um navegador especializado que indexa e exibe obras disponibilizadas publicamente por fontes externas.
+            O <strong>YOMI</strong> oferece gratuitamente uma interface de leitura e organização pessoal na web e no Android, exibindo obras indexadas de fontes externas públicas.
           </p>
         </section>
 
         <section className="space-y-2">
           <h2 className="font-display text-lg font-bold text-white">
-            2. Propriedade Intelectual e Conteúdo de Terceiros
+            2. Conteúdo de Terceiros e Direitos Autorais
           </h2>
           <p>
-            O YOMI <strong>não hospeda, não armazena permanentemente, não digitaliza e não distribui</strong> arquivos de mangás, manhwas ou webtoons em servidores próprios. Todos os metadados, capas e páginas exibidos no catálogo são obtidos em tempo real junto ao acervo público do{" "}
+            O YOMI <strong>não hospeda nem distribui arquivos de obras em servidores próprios</strong>. Metadados e páginas vêm em tempo real do{" "}
             <a
               href="https://mangadex.org"
               target="_blank"
@@ -49,34 +49,25 @@ export default function TermosPage() {
             >
               MangaDex
             </a>
-            . Todos os direitos autorais e marcas das obras pertencem exclusivamente aos seus respectivos autores, estúdios e editoras.
+            , e todos os direitos autorais pertencem aos respectivos autores, estúdios e editoras.
           </p>
         </section>
 
         <section className="space-y-2">
           <h2 className="font-display text-lg font-bold text-white">
-            3. Uso da Conta e Backups Pessoais
+            3. Conta, Comentários e Backups
           </h2>
           <p>
-            A sincronização em nuvem destina-se exclusivamente ao armazenamento pessoal de progresso, favoritos e preferências do próprio leitor. O usuário é responsável pela guarda de suas cópias de segurança portáteis (<code>.kuro</code>) e pelo uso lícito da conta.
+            A conta sincroniza progresso, favoritos e comentários. O usuário é responsável pelo conteúdo que publica e pela guarda dos seus arquivos de backup (<code>.kuro</code>).
           </p>
         </section>
 
         <section className="space-y-2">
           <h2 className="font-display text-lg font-bold text-white">
-            4. Compromisso de Acessibilidade
+            4. Disponibilidade
           </h2>
           <p>
-            Empenhamo-nos em manter a plataforma acessível conforme boas práticas WCAG AA, incluindo navegação completa por teclado, foco visível, textos alternativos em obras e respeito automático à preferência de movimento reduzido do sistema operacional.
-          </p>
-        </section>
-
-        <section className="space-y-2">
-          <h2 className="font-display text-lg font-bold text-white">
-            5. Limitação de Responsabilidade
-          </h2>
-          <p>
-            O serviço é oferecido gratuitamente &ldquo;no estado em que se encontra&rdquo;, podendo sofrer interrupções temporárias decorrentes da disponibilidade de provedores externos. Para dúvidas sobre privacidade e dados pessoais, consulte nossa{" "}
+            O serviço é gratuito e pode depender da disponibilidade de provedores externos. Para detalhes sobre dados, acesse a{" "}
             <Link href="/privacidade" className="text-[var(--yomi-accent)] underline">
               Política de Privacidade
             </Link>

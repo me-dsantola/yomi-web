@@ -56,12 +56,12 @@ export function CookieConsentBanner() {
             </button>
           </div>
           <p className="leading-relaxed text-white/60">
-            Usamos apenas armazenamento essencial para lembrar suas preferências de leitura e manter sua sessão ativa, sem anúncios ou rastreadores comerciais.{" "}
+            Usamos apenas armazenamento essencial para salvar suas preferências e sessão.{" "}
             <Link
               href="/privacidade"
               className="text-white underline decoration-white/30 underline-offset-2 hover:text-[var(--yomi-accent)]"
             >
-              Política de Privacidade
+              Privacidade
             </Link>
             .
           </p>

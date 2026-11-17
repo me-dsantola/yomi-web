@@ -80,12 +80,12 @@ export function HeroSectionAnimated({
               <h1 className="font-display text-4xl sm:text-5xl lg:text-[3.7rem] font-extrabold tracking-tight text-white leading-[1.03]">
                 Mangás, Manhwas e Webtoons.{' '}
                 <span className="block bg-gradient-to-r from-white via-white/90 to-[var(--yomi-accent)] bg-clip-text text-transparent">
-                  Sem limites, onde você estiver.
+                  No celular e no navegador.
                 </span>
               </h1>
 
               <p className="max-w-lg text-base sm:text-lg leading-relaxed text-white/60">
-                Mais de 50.000 obras em alta definição, leitura contínua ou paginada e biblioteca sincronizada em tempo real entre o celular e o navegador.
+                Mais de 50.000 obras em alta definição, leitura contínua ou paginada e biblioteca sincronizada.
               </p>
             </div>
 

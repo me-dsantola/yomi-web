@@ -105,6 +105,28 @@ describe("GitHub Releases & release.json Parser", () => {
     expect((mapped.assets as Record<string, unknown>)["universal"]).toBeUndefined();
   });
 
+  it("respeita noStore para buscar release ao vivo sem cache estático", async () => {
+    const seenCaches: Array<RequestCache | undefined> = [];
+    const liveFetch = (async (url: string, init?: RequestInit) => {
+      seenCaches.push(init?.cache);
+      if (url.endsWith("/releases/latest")) {
+        return new Response(JSON.stringify(MOCK_GITHUB_RELEASE), {
+          status: 200,
+        });
+      }
+      if (url.endsWith("release.json")) {
+        return new Response(JSON.stringify(MOCK_RELEASE_JSON), {
+          status: 200,
+        });
+      }
+      return new Response("Not Found", { status: 404 });
+    }) as typeof fetch;
+
+    const mapped = await fetchLatestYomiRelease(liveFetch, { noStore: true });
+    expect(mapped.tagName).toBe("v1.2.8");
+    expect(seenCaches).toEqual(["no-store", "no-store"]);
+  });
+
   it("retorna fallback funcional quando a API do GitHub falha (rate-limit ou offline)", async () => {
     const failingFetch = (async () => {
       return new Response("Rate limit exceeded", { status: 403 });
@@ -112,6 +134,8 @@ describe("GitHub Releases & release.json Parser", () => {
 
     const safe = await getLatestReleaseSafe(failingFetch);
     expect(safe.isFallback).toBe(true);
+    expect(safe.version).toBe("1.2.11");
+    expect(safe.build).toBe(19);
     expect(safe.fallbackUrl).toBe(FALLBACK_URL);
     expect(safe.apks).toHaveLength(3);
   });

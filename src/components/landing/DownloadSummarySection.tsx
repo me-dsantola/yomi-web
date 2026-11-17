@@ -52,13 +52,13 @@ export function DownloadSummarySection({
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
               <ShieldCheck className="h-3.5 w-3.5" />
-              Release Oficial Verificada • {release.tagName} (Build {release.build})
+              Versão Atual • {release.tagName} (Build {release.build})
             </div>
             <h2 className="font-display text-2xl sm:text-3xl font-bold text-white">
-              Pacotes APK por Arquitetura (Sem Bloatware)
+              Versões por arquitetura
             </h2>
             <p className="text-sm text-white/60 max-w-2xl">
-              Todos os arquivos são assinados digitalmente para garantir atualizações diretas sem perda de dados.
+              Atualize direto por cima da instalação atual sem perder seus dados.
             </p>
           </div>
 

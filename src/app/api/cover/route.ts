@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     try {
       const upstream = await fetch(candidate, {
         headers: {
-          "User-Agent": "YOMI-Web/1.2.10",
+          "User-Agent": "YOMI-Web/1.2.11",
           Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
         },
         next: { revalidate: 86400 },

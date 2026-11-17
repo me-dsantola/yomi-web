@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { QRCodeSVG } from "qrcode.react";
 import {
   Download,
@@ -21,6 +20,7 @@ import {
   type ClientDeviceInfo,
 } from "@/lib/device";
 import type { YomiReleaseInfo } from "@/lib/github/releases";
+import { useLiveRelease } from "@/lib/github/useLiveRelease";
 
 interface SmartDownloadBoxProps {
   release: YomiReleaseInfo;
@@ -33,12 +33,12 @@ const ABI_DESCRIPTIONS: Record<
   "arm64-v8a": {
     label: "Android Moderno (64-bit) — Padrão",
     shortLabel: "Android Moderno",
-    desc: "Compatível com a grande maioria dos celulares Android atuais.",
+    desc: "Padrão para celulares modernos (64-bit).",
   },
   "armeabi-v7a": {
     label: "Android Antigo (32-bit)",
     shortLabel: "Android 32-bit",
-    desc: "Para aparelhos mais antigos ou modelos básicos.",
+    desc: "Para aparelhos antigos de 32-bit.",
   },
   x86_64: {
     label: "PC / Emulador",
@@ -74,19 +74,7 @@ export function SmartDownloadBox({ release }: SmartDownloadBoxProps) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [showQrModal]);
 
-  const { data: liveRelease } = useQuery<YomiReleaseInfo>({
-    queryKey: ["yomi-latest-release"],
-    queryFn: async () => {
-      const res = await fetch("/api/release/latest");
-      if (!res.ok) throw new Error("Falha ao atualizar versão");
-      return res.json();
-    },
-    initialData: release,
-    staleTime: 60_000,
-    retry: 1,
-  });
-
-  const activeRelease = liveRelease ?? release;
+  const activeRelease = useLiveRelease(release) ?? release;
   const currentAsset =
     activeRelease.assets[selectedAbi] ?? activeRelease.assets["arm64-v8a"];
   const primaryHref = currentAsset?.downloadUrl || "#";
@@ -107,10 +95,10 @@ export function SmartDownloadBox({ release }: SmartDownloadBoxProps) {
             <div className="space-y-3">
               <div>
                 <p className="font-semibold text-white">
-                  O aplicativo YOMI é exclusivo para Android
+                  App disponível apenas para Android
                 </p>
                 <p className="mt-1 text-white/75">
-                  No iPhone ou iPad, você pode explorar todo o acervo e ler diretamente pelo navegador agora mesmo.
+                  No iPhone ou iPad, leia diretamente pelo navegador.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2.5">
@@ -125,7 +113,7 @@ export function SmartDownloadBox({ release }: SmartDownloadBoxProps) {
                   href="/download"
                   className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2.5 text-xs font-medium text-white/80 transition hover:bg-white/10"
                 >
-                  Versão Android ({activeRelease.tagName})
+                  APK Android ({activeRelease.tagName})
                 </Link>
               </div>
             </div>
@@ -212,7 +200,7 @@ export function SmartDownloadBox({ release }: SmartDownloadBoxProps) {
               href="/download"
               className="text-white/75 underline decoration-white/30 underline-offset-2 hover:text-white"
             >
-              Ver notas de versão e outras opções
+              Ver detalhes e SHA-256
             </Link>
           </p>
         </div>

@@ -13,8 +13,6 @@ import {
   Zap,
   Check,
   AlertCircle,
-  Lock,
-  Download,
   MessageSquare,
   X,
   BookOpen,
@@ -38,8 +36,6 @@ import {
   resolvePagedSwipeAction,
   resolvePagedTapAction,
 } from "@/lib/mobile/readerTouchAndNav";
-
-const PREVIEW_PAGE_LIMIT = 3;
 
 function ResilientReaderImage({
   candidates,
@@ -108,7 +104,7 @@ export default function QuickReaderPage() {
 
   const { readerMode, setReaderMode, dataSaver, setDataSaver } =
     useReaderStore();
-  const { user, openAuthModal } = useYomiAuth();
+  const { user } = useYomiAuth();
 
   const [currentPage, setCurrentPage] = useState(0);
   const [hudVisible, setHudVisible] = useState(true);
@@ -176,13 +172,8 @@ export default function QuickReaderPage() {
       : data.pages.data
     : [];
 
-  const isPreviewLocked = !user;
-  const visiblePages = isPreviewLocked
-    ? pageFiles.slice(0, PREVIEW_PAGE_LIMIT)
-    : pageFiles;
-  const maxPageIndex = isPreviewLocked
-    ? visiblePages.length
-    : Math.max(0, visiblePages.length - 1);
+  const visiblePages = pageFiles;
+  const maxPageIndex = Math.max(0, visiblePages.length - 1);
 
   const safeCurrentPage = clampReaderPageIndex(
     currentPage,
@@ -533,57 +524,8 @@ export default function QuickReaderPage() {
     );
   }
 
-  const PreviewGateCard = (
-    <motion.div
-      initial={prefersReducedMotion ? false : { opacity: 0, y: 18, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{
-        duration: prefersReducedMotion ? 0 : 0.4,
-        ease: [0.22, 1, 0.36, 1],
-      }}
-      onClick={(e) => e.stopPropagation()}
-      className="mx-auto my-6 w-full max-w-lg rounded-3xl border border-white/15 bg-[#0E0E14]/95 p-6 sm:p-9 text-center shadow-[0_24px_80px_rgba(0,0,0,0.85)] backdrop-blur-xl space-y-5"
-    >
-      <div className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--yomi-accent)]/35 bg-[var(--yomi-accent)]/15 text-[var(--yomi-accent)]">
-        <Lock className="h-5 w-5" />
-      </div>
-
-      <div className="space-y-2">
-        <h2 className="font-display text-2xl font-extrabold text-white">
-          Prévia concluída
-        </h2>
-        <p className="text-sm text-white/65 leading-relaxed">
-          Entre com sua conta gratuita para liberar todas as {pageFiles.length}{" "}
-          páginas deste capítulo e sincronizar sua leitura.
-        </p>
-      </div>
-
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-1">
-        <button
-          type="button"
-          onClick={() => openAuthModal("login")}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-xs sm:text-sm font-semibold text-black shadow-lg transition hover:bg-white/90"
-        >
-          Entrar ou Criar Conta
-        </button>
-        <Link
-          href="/download"
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-3 text-xs sm:text-sm font-medium text-white/85 transition hover:bg-white/10"
-        >
-          <Download className="h-4 w-4 text-[var(--yomi-accent)]" />
-          Baixar App Android
-        </Link>
-      </div>
-    </motion.div>
-  );
-
-  const isOnPagedGate =
-    readerMode !== "webtoon" &&
-    isPreviewLocked &&
-    currentPage >= visiblePages.length;
-
   const showEndOfChapterFooter =
-    !isPreviewLocked &&
+    pageFiles.length > 0 &&
     (readerMode === "webtoon" || safeCurrentPage >= visiblePages.length - 1);
 
   return (
@@ -625,24 +567,10 @@ export default function QuickReaderPage() {
             </div>
 
             <div className="flex items-center gap-1.5 shrink-0">
-              {isPreviewLocked ? (
-                <button
-                  type="button"
-                  onClick={() => openAuthModal("login")}
-                  className="inline-flex items-center gap-1 rounded-full border border-[var(--yomi-accent)]/40 bg-[var(--yomi-accent)]/15 px-2.5 sm:px-3 min-h-[40px] text-[11px] font-semibold text-white transition hover:bg-[var(--yomi-accent)]/25"
-                >
-                  <Lock className="h-3 w-3 text-[var(--yomi-accent)] shrink-0" />
-                  <span className="hidden sm:inline">
-                    Prévia (3 pág.) · Entrar para ler tudo
-                  </span>
-                  <span className="sm:hidden">Prévia</span>
-                </button>
-              ) : (
-                cloudSaved && (
-                  <span className="hidden md:inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-1 text-[11px] font-medium text-emerald-300">
-                    <Check className="h-3 w-3" /> Salvo na nuvem
-                  </span>
-                )
+              {user && cloudSaved && (
+                <span className="hidden md:inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-1 text-[11px] font-medium text-emerald-300">
+                  <Check className="h-3 w-3" /> Salvo na nuvem
+                </span>
               )}
 
               <button
@@ -729,38 +657,24 @@ export default function QuickReaderPage() {
             onClick={() => setHudVisible((v) => !v)}
             className="mx-auto w-full max-w-[820px] flex flex-col gap-0 leading-none pt-[env(safe-area-inset-top,0px)] pb-10"
           >
-            {visiblePages.map((file, idx) => {
-              const isLastPreview =
-                isPreviewLocked && idx === visiblePages.length - 1;
-              return (
-                <div
-                  key={file}
-                  data-page-index={idx}
-                  className="relative w-full"
-                >
-                  <ResilientReaderImage
-                    candidates={buildPageCandidates(idx)}
-                    alt={`Página ${idx + 1}`}
-                    pageNumber={idx + 1}
-                    loading={idx < 3 ? "eager" : "lazy"}
-                    className="block w-full h-auto m-0 p-0 select-none bg-[#09090d]"
-                    onReloadServer={() => {
-                      void refetch();
-                    }}
-                  />
-                  {isLastPreview && (
-                    <div
-                      aria-hidden="true"
-                      className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#070709] to-transparent"
-                    />
-                  )}
-                </div>
-              );
-            })}
-
-            {isPreviewLocked && (
-              <div className="px-3 sm:px-0">{PreviewGateCard}</div>
-            )}
+            {visiblePages.map((file, idx) => (
+              <div
+                key={file}
+                data-page-index={idx}
+                className="relative w-full"
+              >
+                <ResilientReaderImage
+                  candidates={buildPageCandidates(idx)}
+                  alt={`Página ${idx + 1}`}
+                  pageNumber={idx + 1}
+                  loading={idx < 3 ? "eager" : "lazy"}
+                  className="block w-full h-auto m-0 p-0 select-none bg-[#09090d]"
+                  onReloadServer={() => {
+                    void refetch();
+                  }}
+                />
+              </div>
+            ))}
           </div>
         ) : (
           /* PAGED READER WITH TAP ZONES + HORIZONTAL SWIPE */
@@ -811,24 +725,9 @@ export default function QuickReaderPage() {
             }}
           >
             <AnimatePresence mode="wait">
-              {isOnPagedGate ? (
+              {visiblePages[safeCurrentPage] && (
                 <motion.div
-                  key="preview-gate"
-                  initial={prefersReducedMotion ? false : { opacity: 0, x: 24 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={prefersReducedMotion ? undefined : { opacity: 0, x: -24 }}
-                  transition={{
-                    duration: prefersReducedMotion ? 0 : 0.24,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
-                  className="w-full px-3 sm:px-0"
-                >
-                  {PreviewGateCard}
-                </motion.div>
-              ) : (
-                visiblePages[safeCurrentPage] && (
-                  <motion.div
-                    key={safeCurrentPage}
+                  key={safeCurrentPage}
                     initial={
                       prefersReducedMotion
                         ? false
@@ -862,8 +761,7 @@ export default function QuickReaderPage() {
                         void refetch();
                       }}
                     />
-                  </motion.div>
-                )
+                </motion.div>
               )}
             </AnimatePresence>
           </div>
@@ -941,11 +839,7 @@ export default function QuickReaderPage() {
           {visiblePages.length > 1 && (
             <div className="flex items-center gap-3">
               <span className="font-mono text-[11px] text-white/70 shrink-0 min-w-[68px]">
-                {isOnPagedGate
-                  ? "Prévia"
-                  : `Pág. ${safeCurrentPage + 1} / ${visiblePages.length}${
-                      isPreviewLocked ? "*" : ""
-                    }`}
+                {`Pág. ${safeCurrentPage + 1} / ${visiblePages.length}`}
               </span>
               <input
                 type="range"

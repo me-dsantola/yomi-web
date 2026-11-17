@@ -20,69 +20,63 @@ export function YomiFooter() {
           <div className="md:col-span-2 space-y-3">
             <YomiLogo height={28} />
             <p className="text-sm text-white/60 max-w-md leading-relaxed">
-              Leitor pessoal e minimalista de mangás, manhwas e webtoons para
-              Android. Foco total em imersão AMOLED, sincronização em nuvem e
-              respeito à privacidade do leitor.
+              Leitor de mangás, manhwas e webtoons para Android e Web com
+              interface AMOLED e sincronização em nuvem.
             </p>
             <p className="text-xs text-white/45 pt-1">
-              YOMI não é afiliado ao MangaDex nem hospeda arquivos protegidos por
-              direitos autorais.
+              O YOMI não hospeda nem distribui obras protegidas por direitos
+              autorais.
             </p>
           </div>
 
           {/* Coluna 2: Plataforma */}
           <div className="space-y-2.5">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-white">
-              Ecossistema YOMI
+              YOMI
             </h3>
             <ul className="space-y-2 text-sm">
               <li>
                 <Link href="/download" className="hover:text-white transition-colors">
-                  Download Hub & Changelog
+                  Download Android
                 </Link>
               </li>
               <li>
                 <Link href="/instalar" className="hover:text-white transition-colors">
-                  Guia de Instalação & FAQ
+                  Como Instalar
                 </Link>
               </li>
               <li>
                 <Link href="/explorar" className="hover:text-white transition-colors">
-                  Catálogo Web & Quick Reader
+                  Catálogo
                 </Link>
               </li>
               <li>
                 <Link href="/conta" className="hover:text-white transition-colors">
-                  Companion Dashboard
+                  Minha Conta
                 </Link>
               </li>
               <li>
                 <Link href="/conta/backup" className="hover:text-white transition-colors">
-                  Exportar / Importar (.kuro)
+                  Backup (.kuro)
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Coluna 3: Legal & Transparência */}
+          {/* Coluna 3: Legal */}
           <div className="space-y-2.5">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-white">
-              Transparência &amp; Legal
+              Informações
             </h3>
             <ul className="space-y-2 text-sm">
               <li>
                 <Link href="/privacidade" className="hover:text-white transition-colors">
-                  Política de Privacidade (LGPD)
+                  Privacidade (LGPD)
                 </Link>
               </li>
               <li>
                 <Link href="/termos" className="hover:text-white transition-colors">
-                  Termos de Uso &amp; Direitos
-                </Link>
-              </li>
-              <li>
-                <Link href="/instalar" className="hover:text-white transition-colors">
-                  Guia de Instalação Android
+                  Termos de Uso
                 </Link>
               </li>
               <li>
@@ -92,7 +86,7 @@ export function YomiFooter() {
                   rel="noopener noreferrer"
                   className="hover:text-white transition-colors"
                 >
-                  Acervo indexado via MangaDex
+                  Acervo via MangaDex
                 </a>
               </li>
             </ul>
@@ -100,8 +94,8 @@ export function YomiFooter() {
         </div>
 
         <div className="mt-10 pt-6 border-t border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/45">
-          <p>© {new Date().getFullYear()} YOMI. Todos os direitos reservados · Disponível gratuitamente para Android.</p>
-          <p>Interface acessível (WCAG AA) · Sem rastreadores comerciais.</p>
+          <p>© {new Date().getFullYear()} YOMI · Gratuito para Android e Web.</p>
+          <p>Sem anúncios ou rastreadores comerciais.</p>
         </div>
       </div>
     </footer>

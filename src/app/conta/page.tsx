@@ -259,12 +259,10 @@ export default function ContaDashboardPage() {
 
           <div className="space-y-2 max-w-xl mx-auto">
             <h1 className="font-display text-3xl sm:text-4xl font-extrabold text-white">
-              Minha Biblioteca na Nuvem
+              Minha Conta
             </h1>
             <p className="text-sm sm:text-base text-white/60 leading-relaxed">
-              Entre com seu e-mail e senha ou conta Google utilizada no
-              aplicativo YOMI para acompanhar seus favoritos, histórico de
-              leitura, seu Blobatar e gerenciar backups{' '}
+              Entre para sincronizar favoritos, histórico, Blobatar e backups{' '}
               <code className="rounded bg-white/10 px-1.5 py-0.5 text-xs text-white">
                 .kuro
               </code>

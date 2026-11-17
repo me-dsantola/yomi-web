@@ -15,7 +15,6 @@ import {
   FolderHeart,
   Heart,
   Languages,
-  Lock,
   Plus,
   RefreshCw,
   Search,
@@ -547,17 +546,11 @@ export default function ObraDetailsPage() {
                     className="inline-flex items-center gap-2 rounded-full bg-[var(--yomi-accent)] px-6 py-3 text-xs sm:text-sm font-semibold text-white shadow-[0_0_25px_var(--yomi-accent-glow)] transition hover:brightness-110"
                   >
                     <BookOpen className="h-4 w-4" />
-                    {!user
-                      ? `Ler Prévia — ${
-                          firstChapter.isSpecial
-                            ? firstChapter.chapterNumber
-                            : `Cap. ${firstChapter.chapterNumber}`
-                        }`
-                      : `Ler ${
-                          firstChapter.isSpecial
-                            ? firstChapter.chapterNumber
-                            : `Cap. ${firstChapter.chapterNumber}`
-                        } (${firstChapter.language})`}
+                    {`Ler ${
+                      firstChapter.isSpecial
+                        ? firstChapter.chapterNumber
+                        : `Cap. ${firstChapter.chapterNumber}`
+                    } (${firstChapter.language})`}
                   </Link>
                 )
               )}
@@ -592,17 +585,6 @@ export default function ObraDetailsPage() {
                   ? `Coleções (${workCollectionCount})`
                   : 'Adicionar à Coleção'}
               </button>
-
-              {!user && (
-                <button
-                  type="button"
-                  onClick={() => openAuthModal('login')}
-                  className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.06] px-5 py-3 text-xs sm:text-sm font-semibold text-white transition hover:bg-white/15"
-                >
-                  <Lock className="h-3.5 w-3.5 text-[var(--yomi-accent)]" />
-                  Entrar para ler completo
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -688,25 +670,6 @@ export default function ObraDetailsPage() {
               )}
             </div>
           )}
-
-        {!user && chapters.length > 0 && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs">
-            <div className="flex items-center gap-2.5 text-white/75">
-              <Lock className="h-4 w-4 shrink-0 text-[var(--yomi-accent)]" />
-              <span>
-                Visitantes têm acesso a uma prévia de 3 páginas por capítulo.
-                Crie ou conecte sua conta para liberar a leitura completa.
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => openAuthModal('login')}
-              className="shrink-0 rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-black transition hover:bg-white/90"
-            >
-              Entrar / Criar Conta
-            </button>
-          </div>
-        )}
 
         {loadingChapters ? (
           <div className="space-y-2.5">
@@ -847,7 +810,7 @@ export default function ObraDetailsPage() {
                       )}
 
                       <span className="rounded-full bg-white/5 px-3 py-1.5 text-xs font-medium text-white/80">
-                        {!user ? 'Prévia →' : 'Ler →'}
+                        Ler →
                       </span>
                     </div>
                   </Link>
