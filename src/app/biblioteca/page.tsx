@@ -431,6 +431,7 @@ export default function BibliotecaPage() {
             >
               <BlobatarCompanion
                 context="library"
+                loading={loadingCloud || savingList || Boolean(busyId)}
                 animated={cloudState?.profile?.blobatarAnimated !== false}
                 mascotName={cloudState.mascotName}
                 expression={cloudState.profile.blobatarExpression}

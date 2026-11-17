@@ -489,7 +489,7 @@ export default function QuickReaderPage() {
   if (isLoading) {
     return (
       <div className="min-h-dvh bg-[#070709] flex flex-col items-center justify-center p-4 text-center space-y-3">
-        <BlobatarCompanion context="reader" expression="thinking" size={64} interactiveCycle={false} followPointer={false} />
+        <BlobatarCompanion context="reader" loading expression="thinking" size={64} interactiveCycle={false} followPointer={false} />
         <p className="text-xs font-medium text-white/65">
           Preparando páginas em alta definição...
         </p>

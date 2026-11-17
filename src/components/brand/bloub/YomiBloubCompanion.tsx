@@ -12,6 +12,7 @@ export interface YomiBloubCompanionProps {
  shape?:string;
  palette?:string;
  paused?:boolean;
+ loading?:boolean;
  follow?:boolean;
  size?:number;
  context?:MascotContext;
@@ -20,7 +21,7 @@ export interface YomiBloubCompanionProps {
  equipment?:Equipment;
 }
 /** Experimental React adapter. Does not replace any existing profile data. */
-export function YomiBloubCompanion({state='idle',expression='attentif',shape='cercle',palette='espacial',paused=false,follow=true,size=160,context='manual',hue,label='Kuro, seu companheiro de leitura',equipment}:YomiBloubCompanionProps){
+export function YomiBloubCompanion({state='idle',expression='attentif',shape='cercle',palette='espacial',paused=false,loading=false,follow=true,size=160,context='manual',hue,label='Kuro, seu companheiro de leitura',equipment}:YomiBloubCompanionProps){
  const wardrobe=useCosmetics();
  const host=useRef<HTMLDivElement>(null);
  const renderer=useRef<YomiBloub|null>(null);
@@ -31,7 +32,8 @@ export function YomiBloubCompanion({state='idle',expression='attentif',shape='ce
  useEffect(()=>renderer.current?.setPaused(paused),[paused]);
  useEffect(()=>renderer.current?.setFollow(follow),[follow]);
  useEffect(()=>renderer.current?.setContext(context),[context]);
- useEffect(()=>{if(context==='manual')renderer.current?.setState(state);},[state,context]);
+ useEffect(()=>renderer.current?.setLoading(loading),[loading]);
+ useEffect(()=>{if(context==='manual'&&!loading)renderer.current?.setState(state);},[state,context,loading]);
  useEffect(()=>{if(hue===undefined||hue<0)return;const color=(s:number,l:number)=>{const a=s*Math.min(l,1-l);const f=(n:number)=>{const k=(n+hue/30)%12;return Math.round(255*(l-a*Math.max(-1,Math.min(k-3,9-k,1)))).toString(16).padStart(2,'0');};return '#'+f(0)+f(8)+f(4);};renderer.current?.setAppearance({primary:color(.65,.65),accent:color(.75,.82),deep:color(.5,.32),paper:'#101529'});},[hue]);
  useEffect(()=>{renderer.current?.svg.setAttribute('aria-label',label);},[label]);
  useEffect(()=>renderer.current?.setEquipment(equipment??(KURO_WARDROBE_ENABLED?wardrobe.equipment:EMPTY_EQUIPMENT)),[equipment,wardrobe.equipment]);
