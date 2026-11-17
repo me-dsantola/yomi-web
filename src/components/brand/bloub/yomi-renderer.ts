@@ -50,8 +50,7 @@ export class YomiBloub {
  private settleAt=0;
  private context:MascotContext='manual';
  private returnAt=Infinity;
- private nextGesture=Infinity;
- private gestureIndex=0;
+ private loading=false;
  private visible=true;
  private stopPointer:(()=>void)|null=null;
  private hasPointerLook=false;
@@ -73,7 +72,7 @@ export class YomiBloub {
  private notify:Element;
  private cosmetics=new CosmeticRenderer();
  private equipment:Equipment=EMPTY_EQUIPMENT;
- private screenListener=()=>{this.last=0;if(this.media.matches&&this.context!=='manual'){this.setState('idle');this.returnAt=Infinity;}this.sync();};
+ private screenListener=()=>{this.last=0;if(this.media.matches&&this.context!=='manual'){this.setState(this.loading?'thinking':'idle');this.returnAt=Infinity;}this.sync();};
  constructor(private host:HTMLElement, initial:{shape?:string;expression?:string}={}){
   if(initial.shape&&SHAPE_BY_ID.has(initial.shape))this.shape=initial.shape;
   if(initial.expression&&EXPRESSION_BY_ID.has(initial.expression))this.expression=initial.expression;
@@ -101,15 +100,17 @@ export class YomiBloub {
  setPalette(id:string){if(PALETTES[id])this.setAppearance(PALETTES[id]);}
  setAppearance(p:Appearance){this.colorFrom=this.colors();this.appearance={...p};this.colorAt=this.clock;this.changed();}
  private colors():Appearance{const t=Math.min(1,Math.max(0,(this.clock-this.colorAt)/.65)),k=t*t*(3-2*t);return Object.fromEntries(Object.keys(this.appearance).map(key=>[key,mixHex(this.colorFrom[key as keyof Appearance],this.appearance[key as keyof Appearance],k)])) as Appearance;}
- setPaused(value:boolean){this.paused=value;this.last=0;if(value&&this.context!=='manual'){this.setState('idle');this.returnAt=Infinity;}this.sync();}
+ setPaused(value:boolean){this.paused=value;this.last=0;if(value&&this.context!=='manual'){this.setState(this.loading?'thinking':'idle');this.returnAt=Infinity;}this.sync();}
  setFollow(value:boolean){this.follow=value;if(value){this.stopPointer??=trackPagePointer();}else{this.stopPointer?.();this.stopPointer=null;this.engine.setLook(null,this.clock);this.hasPointerLook=false;}}
  setEquipment(value:Equipment){this.equipment=sanitizeEquipment(value,new Set(ITEMS.map(i=>i.id)));this.paint();}
  setContext(context:MascotContext){
-  this.context=context;this.gestureIndex=0;this.nextGesture=this.clock+24;
-  const opening:Record<MascotContext,StateId>={manual:'idle',welcome:'wink',profile:'orbit',library:'thinking',reader:'idle',complete:'burst',empty:'wide'};
-  this.setState(this.paused||this.media.matches?'idle':opening[context]);this.returnAt=this.paused||this.media.matches||context==='reader'||context==='manual'?Infinity:this.clock+(context==='complete'?3.6:2.8);
+  this.context=context;
+  const opening:Record<MascotContext,StateId>={manual:'idle',welcome:'wink',profile:'idle',library:'idle',reader:'idle',complete:'burst',empty:'wide'};
+  const state=this.loading?'thinking':this.paused||this.media.matches?'idle':opening[context];
+  this.setState(state);this.returnAt=this.loading||state==='idle'||context==='manual'?Infinity:this.clock+(context==='complete'?3.6:2.8);
  }
- react(){if(this.context==='reader')return;this.setState('wink');this.returnAt=this.clock+2;this.nextGesture=this.clock+28;}
+ setLoading(value:boolean){if(this.loading===value)return;this.loading=value;this.returnAt=Infinity;this.setState(value?'thinking':'idle');}
+ react(){if(this.loading||this.context==='reader')return;this.setState('wink');this.returnAt=this.clock+2;}
  private changed(){if(this.paused||this.media.matches)this.clock+=1;this.paint();}
  private runnable(){return !this.disposed&&!this.paused&&!this.media.matches&&this.visible&&!document.hidden;}
  private sync(){if(this.runnable()){if(!this.raf)this.raf=requestAnimationFrame(this.tick);}else{cancelAnimationFrame(this.raf);this.raf=0;this.last=0;}}
@@ -117,7 +118,6 @@ export class YomiBloub {
   this.raf=0;if(!this.runnable())return;
   const dt=this.last?Math.min((ms-this.last)/1000,.064):0;this.clock+=dt*.9;this.last=ms;
   if(this.clock>=this.returnAt){this.returnAt=Infinity;this.setState('idle');}
-  if(this.context!=='manual'&&this.context!=='reader'&&this.clock>=this.nextGesture){const gestures:StateId[]=['wink','thinking','wide'];this.setState(gestures[this.gestureIndex++%gestures.length]!);this.returnAt=this.clock+2.3;this.nextGesture=this.clock+28+(this.gestureIndex%3)*7;}
   const pointer=this.follow?getPagePointer():null;
   if(pointer&&this.clock>=this.settleAt&&STATE_BY_ID.get(this.state)?.baseFace){
    const b=this.svg.getBoundingClientRect();if(b.width&&b.height){const target=pagePointerLook(pointer,b,{width:window.innerWidth,height:window.innerHeight});const amount=1-Math.exp(-dt/.12);this.gaze.yaw+=(target.yaw-this.gaze.yaw)*amount;this.gaze.pitch+=(target.pitch-this.gaze.pitch)*amount;this.engine.setLook({...this.gaze,mix:1,spin:0,wander:0},this.clock,1/60);this.hasPointerLook=true;}

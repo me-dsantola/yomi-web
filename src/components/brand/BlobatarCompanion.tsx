@@ -105,11 +105,12 @@ export interface BlobatarCompanionProps {
   className?: string;
   context?: MascotContext;
   animated?: boolean;
+  loading?: boolean;
   equipment?: Equipment;
 }
 
 /** Compatibility wrapper: saved Blobatar preferences keep their existing IDs. */
-export function BlobatarCompanion({name,mascotName,hue,accentColor,shape='auto',background='squircle',darkContainer,expression='happy',size=76,followPointer=true,interactiveCycle=true,className,context,animated=true,equipment}:BlobatarCompanionProps) {
+export function BlobatarCompanion({name,mascotName,hue,accentColor,shape='auto',background='squircle',darkContainer,expression='happy',size=76,followPointer=true,interactiveCycle=true,className,context,animated=true,loading=false,equipment}:BlobatarCompanionProps) {
   const [cycleOffset,setCycleOffset]=useState<number|null>(null);
   const themePreset=useReaderStore(s=>s.themePreset);
   const displayName=mascotName||name||'Kuro';
@@ -127,7 +128,7 @@ export function BlobatarCompanion({name,mascotName,hue,accentColor,shape='auto',
     className={cn('relative inline-flex items-center justify-center rounded-3xl',framed&&'border border-white/12 bg-[#101529]',interactiveCycle&&'cursor-pointer',className)}
     style={{width:pixelSize,height:pixelSize}}>
       <YomiBloubCompanion size={pixelSize} shape={shapes[shape]??'cercle'} expression={ids[selected]??'attentif'} hue={effectiveHue} equipment={equipment}
-        follow={followPointer&&pixelSize>=64} paused={!animated||pixelSize<48}
+        follow={followPointer&&pixelSize>=64} paused={!animated||pixelSize<48} loading={loading}
         context={context??(pixelSize>=74?'profile':'reader')} label={`Mascote ${displayName}`} />
   </div>;
 }

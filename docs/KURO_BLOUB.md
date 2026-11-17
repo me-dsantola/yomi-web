@@ -6,7 +6,7 @@ The existing BlobatarCompanion API now delegates to the Bloub vector motor. Prof
 
 ## Motion
 
-Transitions use matched cubic easing for silhouette and eye corrections; pointer targets use time-based damping. Colors interpolate for 650 ms from the currently visible colors, including during interrupted changes. Context reactions return to idle and occasional gestures have 28–42 seconds between them. Hidden pages, offscreen instances, explicit pause and OS reduced motion suspend the loop. React effect cleanup removes the renderer and all listeners.
+Transitions use matched cubic easing for silhouette and eye corrections; pointer targets use time-based damping. Colors interpolate for 650 ms from the currently visible colors, including during interrupted changes. Context reactions return to idle; no periodic or random gesture scheduler runs. Hidden pages, offscreen instances, explicit pause and OS reduced motion suspend the loop. React effect cleanup removes the renderer and all listeners.
 
 Gaze tracks the mouse across the whole page through one shared passive pointer listener. Each companion computes bounded viewport-relative angles from its current screen bounds, including after scrolling. Leaving the browser or losing focus eases back to natural gaze; touch does not activate tracking. Context transitions keep the last cursor position and resume following when the pose is stable. `follow={false}`, pause and OS reduced motion remain respected.
 
@@ -39,7 +39,7 @@ The authoritative rules are in the web repository's `firestore.rules`. Deploy th
 
 ### Verification
 
-Web: 77 unit/regression tests, production compilation and browser checks of all four slots, combinations, interrupted fade, mobile layout, reduced motion and preview isolation. Native: 187 tests, including catalog boundaries, ownership/category validation, customized anchors and rendering with four slots. Firestore emulator checks account isolation, immutable claims, seasonal boundaries, duplicate transactions, forged backup ownership and permanent out-of-season equipment. Run isolated rule tests using the web `tests/firestore/README.md`; never deploy its test-only calendar endpoint. Real-account cross-device synchronization and a physical entry-level Android benchmark remain release checks.
+Web: 77 unit/regression tests, production compilation and browser checks of all four slots, combinations, interrupted fade, mobile layout, reduced motion and preview isolation. Native: 188 tests, including catalog boundaries, ownership/category validation, customized anchors and rendering with four slots. Firestore emulator checks account isolation, immutable claims, seasonal boundaries, duplicate transactions, forged backup ownership and permanent out-of-season equipment. Run isolated rule tests using the web `tests/firestore/README.md`; never deploy its test-only calendar endpoint. Real-account cross-device synchronization and a physical entry-level Android benchmark remain release checks.
 
 
 ## Shape persistence audit — revision 03
@@ -51,3 +51,7 @@ Changing shape midway through a morph snapshots the displayed radii and eye corr
 The Flutter atlas v2 stores state motion separately from catalog profiles. Native playback reconstructs each contour from the selected profile and interpolated pose, and fits eyes to that profile. A shape change keeps the current action clock and blends from the currently drawn frame. This avoids a separate large animation atlas per shape. The generated asset is approximately 2.5 MB.
 
 Regression coverage: eight shapes across normal body states, three-dot loading and return transitions and multiple internal timestamps; every pair of state transitions and both sides of the blend cutoff; interrupted shape changes; cycle wraps/repeated blocks; native selected-shape differentiation and widget transitions.
+
+## Event-driven reactions (v1.2.14)
+
+Profile and library context alone leave Kuro idle. A welcome greeting is a page-entry reaction; completion celebrates once on the real end-of-chapter card; a tap is an explicit interaction. The `loading` input is bound to real requests/operations, takes priority over other reactions, stays active until the operation ends, and then interpolates back to rest. Native loading loops only the settled 1.5-second pulse so operations longer than the six-second atlas never freeze. Idle retains breathing, blinking and page-wide pointer gaze without initiating actions. The `/mascote` simulation requires an explicit loading button; it never automatically tours states.
