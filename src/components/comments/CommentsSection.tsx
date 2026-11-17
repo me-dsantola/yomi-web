@@ -32,6 +32,7 @@ import {
 } from '@/lib/firebase/comments';
 import type { ParsedYomiCloudState } from '@/lib/firebase/cloudSync';
 import { argbIntToHex } from '@/lib/backup/kuroCodec';
+import { EMPTY_EQUIPMENT } from '@/lib/kuro/cosmetics';
 import { BlobatarCompanion } from '@/components/brand/BlobatarCompanion';
 
 interface CommentsSectionProps {
@@ -678,6 +679,7 @@ export function CommentsSection({
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <BlobatarCompanion
+                      equipment={EMPTY_EQUIPMENT}
                       seed={comment.userName}
                       mascotName={comment.userName}
                       accentColor={comment.mascotColorId}
