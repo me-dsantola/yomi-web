@@ -18,7 +18,7 @@ export default function MascotPage(){
  return <main className="mx-auto max-w-4xl px-5 pb-12 pt-32 text-white">
    <p className="text-xs uppercase tracking-[.22em] text-violet-300">Seu companheiro de histórias</p>
    <h1 className="mt-3 text-4xl font-bold">Kuro pelo Yomi.</h1>
-   <p className="mt-4 max-w-xl text-sm leading-7 text-white/60">Um olhar curioso na biblioteca, uma comemoração ao terminar o capítulo e uma presença tranquila para acompanhar você.</p>
+   <p className="mt-4 max-w-xl text-sm leading-7 text-white/60">Um olhar curioso na biblioteca, uma comemoração ao terminar o capítulo e uma presença tranquila para acompanhar você. Mova o mouse pela página: o Kuro acompanha você com o olhar.</p>
    <section className="mt-8 rounded-3xl border border-white/10 bg-[#101529] p-8 text-center">
      <div className="flex justify-center"><BlobatarCompanion key={place} context={place} hue={hue} size={260} expression={place==='library'?'unsure':'happy'} background={false} /></div>
      <h2 className="mt-3 text-xl font-semibold">{current.title}</h2><p className="mt-2 text-sm text-white/65">{current.message}</p>

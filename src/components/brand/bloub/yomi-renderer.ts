@@ -4,6 +4,7 @@ import { EXPRESSION_BY_ID } from './bot/expressions';
 import { STATE_BY_ID, type StateId } from './bot/states';
 import { DEMI_VIEWBOX, RAYON } from './bot/repere';
 import { CosmeticRenderer } from './cosmetic-renderer';
+import { getPagePointer, pagePointerLook, trackPagePointer } from './page-pointer';
 import { EMPTY_EQUIPMENT, sanitizeEquipment, ITEMS, type Equipment } from './cosmetics';
 
 const NS='http://www.w3.org/2000/svg';
@@ -52,7 +53,8 @@ export class YomiBloub {
  private nextGesture=Infinity;
  private gestureIndex=0;
  private visible=true;
- private pointer:{x:number;y:number}|null=null;
+ private stopPointer:(()=>void)|null=null;
+ private hasPointerLook=false;
  private media=matchMedia('(prefers-reduced-motion: reduce)');
  private observer:IntersectionObserver;
  private uid='yomi-bloub-'+(++serial);
@@ -72,8 +74,6 @@ export class YomiBloub {
  private cosmetics=new CosmeticRenderer();
  private equipment:Equipment=EMPTY_EQUIPMENT;
  private screenListener=()=>{this.last=0;if(this.media.matches&&this.context!=='manual'){this.setState('idle');this.returnAt=Infinity;}this.sync();};
- private move=(e:PointerEvent)=>{if(e.pointerType!=='touch')this.pointer={x:e.clientX,y:e.clientY};};
- private leave=()=>{this.pointer=null;this.engine.setLook(null,this.clock);};
  constructor(private host:HTMLElement, initial:{shape?:string;expression?:string}={}){
   if(initial.shape&&SHAPE_BY_ID.has(initial.shape))this.shape=initial.shape;
   if(initial.expression&&EXPRESSION_BY_ID.has(initial.expression))this.expression=initial.expression;
@@ -92,17 +92,17 @@ export class YomiBloub {
   this.svg.append(this.cosmetics.behind,this.back,this.dotsBack,this.backdrop,this.body,this.dotsFront,this.notify,this.front,this.cosmetics.front);host.append(this.svg);
   this.observer=new IntersectionObserver(entries=>{this.visible=entries[0]?.isIntersecting??false;this.last=0;this.sync();});this.observer.observe(host);
   this.media.addEventListener('change',this.screenListener);document.addEventListener('visibilitychange',this.screenListener);
-  host.addEventListener('pointermove',this.move);host.addEventListener('pointerleave',this.leave);
+  this.setFollow(true);
   this.paint();this.sync();
  }
- setState(id:string){if(!STATE_BY_ID.has(id as StateId)||this.state===id)return;this.state=id as StateId;this.pointer=null;this.engine.setLook(null,this.clock);this.engine.setState(this.state,this.clock);this.settleAt=this.clock+.72;this.changed();}
+ setState(id:string){if(!STATE_BY_ID.has(id as StateId)||this.state===id)return;this.state=id as StateId;this.engine.setLook(null,this.clock);this.hasPointerLook=false;this.engine.setState(this.state,this.clock);this.settleAt=this.clock+.72;this.changed();}
  setShape(id:string){const s=SHAPE_BY_ID.get(id);if(!s)return;this.shape=id;this.engine.setShape(s.radii,this.clock);this.changed();}
  setExpression(id:string){const e=EXPRESSION_BY_ID.get(id);if(!e)return;this.expression=id;this.engine.setExpression(e,this.clock);this.changed();}
  setPalette(id:string){if(PALETTES[id])this.setAppearance(PALETTES[id]);}
  setAppearance(p:Appearance){this.colorFrom=this.colors();this.appearance={...p};this.colorAt=this.clock;this.changed();}
  private colors():Appearance{const t=Math.min(1,Math.max(0,(this.clock-this.colorAt)/.65)),k=t*t*(3-2*t);return Object.fromEntries(Object.keys(this.appearance).map(key=>[key,mixHex(this.colorFrom[key as keyof Appearance],this.appearance[key as keyof Appearance],k)])) as Appearance;}
  setPaused(value:boolean){this.paused=value;this.last=0;if(value&&this.context!=='manual'){this.setState('idle');this.returnAt=Infinity;}this.sync();}
- setFollow(value:boolean){this.follow=value;if(!value)this.leave();}
+ setFollow(value:boolean){this.follow=value;if(value){this.stopPointer??=trackPagePointer();}else{this.stopPointer?.();this.stopPointer=null;this.engine.setLook(null,this.clock);this.hasPointerLook=false;}}
  setEquipment(value:Equipment){this.equipment=sanitizeEquipment(value,new Set(ITEMS.map(i=>i.id)));this.paint();}
  setContext(context:MascotContext){
   this.context=context;this.gestureIndex=0;this.nextGesture=this.clock+24;
@@ -118,8 +118,11 @@ export class YomiBloub {
   const dt=this.last?Math.min((ms-this.last)/1000,.064):0;this.clock+=dt*.9;this.last=ms;
   if(this.clock>=this.returnAt){this.returnAt=Infinity;this.setState('idle');}
   if(this.context!=='manual'&&this.context!=='reader'&&this.clock>=this.nextGesture){const gestures:StateId[]=['wink','thinking','wide'];this.setState(gestures[this.gestureIndex++%gestures.length]!);this.returnAt=this.clock+2.3;this.nextGesture=this.clock+28+(this.gestureIndex%3)*7;}
-  if(this.follow&&this.pointer&&this.clock>=this.settleAt&&STATE_BY_ID.get(this.state)?.baseFace){
-   const b=this.svg.getBoundingClientRect();if(b.width&&b.height){const amount=1-Math.exp(-dt/.12);this.gaze.yaw+=(Math.max(-45,Math.min(45,(this.pointer.x-b.left-b.width/2)/b.width*60))-this.gaze.yaw)*amount;this.gaze.pitch+=(Math.max(-30,Math.min(30,-(this.pointer.y-b.top-b.height/2)/b.height*45))-this.gaze.pitch)*amount;this.engine.setLook({...this.gaze,mix:1,spin:0,wander:0},this.clock,1/60);}
+  const pointer=this.follow?getPagePointer():null;
+  if(pointer&&this.clock>=this.settleAt&&STATE_BY_ID.get(this.state)?.baseFace){
+   const b=this.svg.getBoundingClientRect();if(b.width&&b.height){const target=pagePointerLook(pointer,b,{width:window.innerWidth,height:window.innerHeight});const amount=1-Math.exp(-dt/.12);this.gaze.yaw+=(target.yaw-this.gaze.yaw)*amount;this.gaze.pitch+=(target.pitch-this.gaze.pitch)*amount;this.engine.setLook({...this.gaze,mix:1,spin:0,wander:0},this.clock,1/60);this.hasPointerLook=true;}
+  }else if(this.hasPointerLook){
+   this.engine.setLook(null,this.clock);this.hasPointerLook=false;
   }
   this.paint();this.sync();
  };
@@ -149,5 +152,5 @@ export class YomiBloub {
   attrs(this.notify,{cx:f.notif?.x??0,cy:f.notif?.y??0,r:f.notif?.r??0,fill:p.accent});
   this.cosmetics.draw(f,this.equipment,at);
  }
- destroy(){if(this.disposed)return;this.disposed=true;cancelAnimationFrame(this.raf);this.observer.disconnect();this.media.removeEventListener('change',this.screenListener);document.removeEventListener('visibilitychange',this.screenListener);this.host.removeEventListener('pointermove',this.move);this.host.removeEventListener('pointerleave',this.leave);this.svg.remove();}
+ destroy(){if(this.disposed)return;this.disposed=true;cancelAnimationFrame(this.raf);this.observer.disconnect();this.media.removeEventListener('change',this.screenListener);document.removeEventListener('visibilitychange',this.screenListener);this.stopPointer?.();this.stopPointer=null;this.svg.remove();}
 }

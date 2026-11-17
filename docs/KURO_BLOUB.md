@@ -6,6 +6,8 @@ The existing BlobatarCompanion API now delegates to the Bloub vector motor. Prof
 
 Transitions use matched cubic easing for silhouette and eye corrections; pointer targets use time-based damping. Colors interpolate for 650 ms from the currently visible colors, including during interrupted changes. Context reactions return to idle and occasional gestures have 28–42 seconds between them. Hidden pages, offscreen instances, explicit pause and OS reduced motion suspend the loop. React effect cleanup removes the renderer and all listeners.
 
+Gaze tracks the mouse across the whole page through one shared passive pointer listener. Each companion computes bounded viewport-relative angles from its current screen bounds, including after scrolling. Leaving the browser or losing focus eases back to natural gaze; touch does not activate tracking. Context transitions keep the last cursor position and resume following when the pose is stable. `follow={false}`, pause and OS reduced motion remain respected.
+
 `/mascote` is a product preview of the actual React component and its five placement contexts. The standalone demo remains separate.
 
 ## Upstream and license
