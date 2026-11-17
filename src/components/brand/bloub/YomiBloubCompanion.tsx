@@ -2,7 +2,8 @@
 import { useEffect, useRef } from 'react';
 import { YomiBloub, type MascotContext } from './yomi-renderer';
 import type { StateId } from './bot/states';
-import type { Equipment } from './cosmetics';
+import { EMPTY_EQUIPMENT, type Equipment } from './cosmetics';
+import { KURO_WARDROBE_ENABLED } from '@/lib/kuro/features';
 import { useCosmetics } from './useCosmetics';
 
 export interface YomiBloubCompanionProps {
@@ -33,6 +34,6 @@ export function YomiBloubCompanion({state='idle',expression='attentif',shape='ce
  useEffect(()=>{if(context==='manual')renderer.current?.setState(state);},[state,context]);
  useEffect(()=>{if(hue===undefined||hue<0)return;const color=(s:number,l:number)=>{const a=s*Math.min(l,1-l);const f=(n:number)=>{const k=(n+hue/30)%12;return Math.round(255*(l-a*Math.max(-1,Math.min(k-3,9-k,1)))).toString(16).padStart(2,'0');};return '#'+f(0)+f(8)+f(4);};renderer.current?.setAppearance({primary:color(.65,.65),accent:color(.75,.82),deep:color(.5,.32),paper:'#101529'});},[hue]);
  useEffect(()=>{renderer.current?.svg.setAttribute('aria-label',label);},[label]);
- useEffect(()=>renderer.current?.setEquipment(equipment??wardrobe.equipment),[equipment,wardrobe.equipment]);
+ useEffect(()=>renderer.current?.setEquipment(equipment??(KURO_WARDROBE_ENABLED?wardrobe.equipment:EMPTY_EQUIPMENT)),[equipment,wardrobe.equipment]);
  return <div ref={host} style={{width:size,height:size}} />;
 }
