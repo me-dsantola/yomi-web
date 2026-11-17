@@ -475,7 +475,6 @@ export default function ContaDashboardPage() {
 
               {/* Actions */}
               <div className="flex flex-wrap items-center gap-2.5">
-                <Link href="/guarda-roupa" className="rounded-full border border-violet-400/40 bg-violet-400/10 px-4 py-2 text-xs font-semibold text-violet-200">Guarda-roupa do Kuro</Link>
                 <button
                   type="button"
                   onClick={openEditProfile}

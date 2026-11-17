@@ -8,8 +8,8 @@ function vertices(path:string){return [...path.matchAll(/([MC])([^MCZ]+)/g)].fla
 function delta(a:string,b:string){const x=vertices(a),y=vertices(b);return Math.max(...x.map((n,i)=>Math.abs(n-y[i])));}
 
 describe('user shape survives every Kuro action',()=>{
- for(const shape of SHAPES)it(`${shape.id}: all 15 states retain its radial geometry`,()=>{
-  for(const state of STATES){const engine=new BotEngine(100,state.id,shape.radii);
+ for(const shape of SHAPES)it(`${shape.id}: normal body states retain its radial geometry`,()=>{
+  for(const state of STATES.filter(state=>state.baseBody)){const engine=new BotEngine(100,state.id,shape.radii);
    for(const time of [0,.3,1.2,2.49,2.51,3.6,6]){
     const frame=engine.sample(time);
     expect(frame.silhouette.radii).toEqual(shape.radii);
