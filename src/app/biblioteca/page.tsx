@@ -430,6 +430,8 @@ export default function BibliotecaPage() {
               className="hidden sm:block rounded-2xl border border-white/10 bg-black/40 p-1.5 hover:border-white/25 transition"
             >
               <BlobatarCompanion
+                context="library"
+                animated={cloudState?.profile?.blobatarAnimated !== false}
                 mascotName={cloudState.mascotName}
                 expression={cloudState.profile.blobatarExpression}
                 shape={cloudState.profile.blobatarShape}

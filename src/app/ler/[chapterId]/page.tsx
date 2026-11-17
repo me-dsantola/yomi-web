@@ -1,4 +1,5 @@
 "use client";
+import { BlobatarCompanion } from '@/components/brand/BlobatarCompanion';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -488,7 +489,7 @@ export default function QuickReaderPage() {
   if (isLoading) {
     return (
       <div className="min-h-dvh bg-[#070709] flex flex-col items-center justify-center p-4 text-center space-y-3">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-[var(--yomi-accent)] border-t-transparent" />
+        <BlobatarCompanion context="reader" expression="thinking" size={64} interactiveCycle={false} followPointer={false} />
         <p className="text-xs font-medium text-white/65">
           Preparando páginas em alta definição...
         </p>
@@ -773,6 +774,8 @@ export default function QuickReaderPage() {
             onClick={(e) => e.stopPropagation()}
             className="mx-3 sm:mx-auto my-6 mb-24 w-[calc(100%-1.5rem)] max-w-md rounded-2xl border border-white/10 bg-[#0E0E14] p-5 text-center space-y-3 select-text"
           >
+            <div className="flex justify-center"><BlobatarCompanion key={chapterId} context="complete" expression="happy" size={92} interactiveCycle followPointer={false} /></div>
+            <p className="text-xs text-white/70">Mais uma história compartilhada. Boa leitura!</p>
             <div className="text-sm font-semibold text-white">
               Fim do Capítulo {data.chapterInfo.chapterNumber}
             </div>

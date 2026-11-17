@@ -227,6 +227,7 @@ export function HeroSectionAnimated({
                 <div className="relative overflow-hidden rounded-[26px] border border-white/10 bg-[#0D0D14]/90 p-5 flex items-center gap-4">
                   <div className="shrink-0">
                     <BlobatarCompanion
+                context="welcome"
                       seed="YOMI"
                       mascotName="Yomi"
                       size={84}
@@ -239,7 +240,7 @@ export function HeroSectionAnimated({
                       Mascote
                     </span>
                     <h3 className="mt-1.5 font-display text-base font-bold text-white">
-                      Blobatar Reativo
+                      Kuro, seu companheiro
                     </h3>
                     <p className="mt-0.5 text-xs text-white/55">
                       Acompanha as cores do tema e seu cursor.

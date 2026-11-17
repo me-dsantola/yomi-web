@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { Blobatar } from 'blobatar/react';
+import React, { useEffect, useState } from 'react';
+import { YomiBloubCompanion } from './bloub/YomiBloubCompanion';
+import type { MascotContext } from './bloub/yomi-renderer';
 import {
   idle,
   happy,
@@ -19,7 +20,6 @@ import {
   thinking,
   type Expression,
 } from 'blobatar/expression';
-import { gaze } from 'blobatar/gaze';
 import { cn } from '@/lib/utils';
 import { useReaderStore, type YomiThemePreset } from '@/lib/store/readerStore';
 
@@ -87,17 +87,6 @@ export const BLOBATAR_EXPRESSIONS: Array<{
   { id: 'sick', label: 'Tonto', expr: sick },
 ];
 
-function resolveExpressionObject(id?: string): Expression {
-  const found = BLOBATAR_EXPRESSIONS.find((e) => e.id === id);
-  return found ? found.expr : happy;
-}
-
-function resolveShapeTrait(shape?: string): Record<string, number> | undefined {
-  if (!shape || shape === 'auto') return undefined;
-  const found = BLOBATAR_SHAPES.find((s) => s.id === shape);
-  return found?.traitAt !== undefined ? { shape: found.traitAt } : undefined;
-}
-
 export interface BlobatarCompanionProps {
   name?: string;
   mascotName?: string;
@@ -113,123 +102,30 @@ export interface BlobatarCompanionProps {
   followPointer?: boolean;
   interactiveCycle?: boolean;
   className?: string;
+  context?: MascotContext;
+  animated?: boolean;
 }
 
-/**
- * Mascote interativo oficial do YOMI alimentado pelo motor geométrico `blobatar`.
- * Sincroniza sua paleta com o tema ativo do portal, aceita troca de expressões e acompanha o ponteiro.
- */
-export function BlobatarCompanion({
-  name,
-  mascotName,
-  seed,
-  hue,
-  accentColor,
-  shape = 'auto',
-  background = 'squircle',
-  darkContainer,
-  expression = 'happy',
-  size = 76,
-  followPointer = true,
-  interactiveCycle = true,
-  className,
-}: BlobatarCompanionProps) {
-  const svgRef = useRef<SVGSVGElement | null>(null);
-  const [cycleOffset, setCycleOffset] = useState<number | null>(null);
-  const themePreset = useReaderStore((s) => s.themePreset);
-
-  const effectiveSeed = (seed || mascotName || name || 'yomi-reader').trim();
-  const displayName = mascotName || name || 'Yomi';
-  const effectiveHue =
-    hue ?? hexToHue(accentColor) ?? THEME_HUE_MAP[themePreset] ?? 348;
-
-  const useDarkSquircle =
-    darkContainer ?? (background === 'squircle' || background === true);
-
-  const pixelSize =
-    typeof size === 'number'
-      ? size
-      : size === 'sm'
-        ? 64
-        : size === 'lg'
-          ? 112
-          : 80;
-
-  const baseIdx = Math.max(
-    0,
-    BLOBATAR_EXPRESSIONS.findIndex((e) => e.id === expression)
-  );
-  const activeExpr =
-    cycleOffset !== null
-      ? BLOBATAR_EXPRESSIONS[cycleOffset % BLOBATAR_EXPRESSIONS.length].expr
-      : resolveExpressionObject(expression);
-
-  useEffect(() => {
-    setCycleOffset(null);
-  }, [expression]);
-
-  useEffect(() => {
-    if (!followPointer || !svgRef.current) return;
-    if (
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    ) {
-      return;
-    }
-
-    const controller = gaze(svgRef.current, { target: 'pointer' });
-    return () => {
-      controller.stop();
-    };
-  }, [followPointer, effectiveSeed, shape, background, effectiveHue]);
-
-  const handleTap = () => {
-    if (!interactiveCycle) return;
-    setCycleOffset((prev) => ((prev ?? baseIdx) + 1) % BLOBATAR_EXPRESSIONS.length);
-  };
-
-  return (
-    <div
-      onClick={handleTap}
-      role={interactiveCycle ? 'button' : undefined}
-      tabIndex={interactiveCycle ? 0 : undefined}
-      onKeyDown={(e) => {
-        if (interactiveCycle && (e.key === 'Enter' || e.key === ' ')) {
-          e.preventDefault();
-          handleTap();
-        }
-      }}
-      aria-label={`Mascote ${displayName}${interactiveCycle ? ' — clique para mudar a expressão' : ''}`}
-      title={interactiveCycle ? `${displayName} (clique para interagir)` : displayName}
-      className={cn(
-        'relative inline-flex items-center justify-center rounded-3xl transition-transform duration-300',
-        useDarkSquircle &&
-          'border border-white/12 p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]',
-        interactiveCycle && 'cursor-pointer hover:scale-105 active:scale-95',
-        className
-      )}
-      style={{
-        width: pixelSize,
-        height: pixelSize,
-        ...(useDarkSquircle
-          ? {
-              background: `radial-gradient(circle at 25% 20%, hsla(${effectiveHue}, 82%, 52%, 0.24), #12121C 58%, #08080C 100%)`,
-            }
-          : {}),
-      }}
-    >
-      <Blobatar
-        ref={svgRef}
-        name={effectiveSeed}
-        size={useDarkSquircle ? Math.round(pixelSize * 0.86) : pixelSize}
-        background={useDarkSquircle ? false : background}
-        hue={effectiveHue}
-        traits={resolveShapeTrait(shape)}
-        animate="always"
-        expression={activeExpr}
-        title={displayName}
-        className="overflow-visible select-none drop-shadow-[0_10px_24px_rgba(0,0,0,0.55)]"
-      />
-    </div>
-  );
+/** Compatibility wrapper: saved Blobatar preferences keep their existing IDs. */
+export function BlobatarCompanion({name,mascotName,hue,accentColor,shape='auto',background='squircle',darkContainer,expression='happy',size=76,followPointer=true,interactiveCycle=true,className,context,animated=true}:BlobatarCompanionProps) {
+  const [cycleOffset,setCycleOffset]=useState<number|null>(null);
+  const themePreset=useReaderStore(s=>s.themePreset);
+  const displayName=mascotName||name||'Kuro';
+  const effectiveHue=hue??hexToHue(accentColor)??(themePreset==='crimson'?undefined:THEME_HUE_MAP[themePreset]);
+  const pixelSize=typeof size==='number'?size:size==='sm'?64:size==='lg'?112:80;
+  const framed=darkContainer??(background==='squircle'||background===true);
+  const ids:Record<string,string>={idle:'neutre',happy:'heureux',love:'heureux',wink:'heureux',smug:'fier',surprised:'surpris',thinking:'attentif',shy:'timide',sleepy:'somnolent',sad:'triste',mad:'colere',unsure:'curieux',scared:'effraye',sick:'confus'};
+  const shapes:Record<string,string>={auto:'goutte',round:'cercle',organic:'galet',boxy:'squircle',capsule:'capsule',nub:'goutte',cloud:'nuage',droplet:'goutte',hexagon:'hexagone',sun:'cercle',triangle:'triangle'};
+  const selected=cycleOffset===null?expression:BLOBATAR_EXPRESSIONS[cycleOffset%BLOBATAR_EXPRESSIONS.length].id;
+  useEffect(()=>setCycleOffset(null),[expression]);
+  const tap=()=>{if(interactiveCycle)setCycleOffset(prev=>((prev??Math.max(0,BLOBATAR_EXPRESSIONS.findIndex(e=>e.id===expression)))+1)%BLOBATAR_EXPRESSIONS.length);};
+  return <div onClick={tap} role={interactiveCycle?'button':undefined} tabIndex={interactiveCycle?0:undefined}
+    onKeyDown={e=>{if(interactiveCycle&&(e.key==='Enter'||e.key===' ')){e.preventDefault();tap();}}}
+    aria-label={`Mascote ${displayName}${interactiveCycle?' — toque para interagir':''}`} title={displayName}
+    className={cn('relative inline-flex items-center justify-center rounded-3xl',framed&&'border border-white/12 bg-[#101529]',interactiveCycle&&'cursor-pointer',className)}
+    style={{width:pixelSize,height:pixelSize}}>
+      <YomiBloubCompanion size={pixelSize} shape={shapes[shape]??'goutte'} expression={ids[selected]??'attentif'} hue={effectiveHue}
+        follow={followPointer&&pixelSize>=64} paused={!animated||pixelSize<48}
+        context={context??(pixelSize>=74?'profile':'reader')} label={`Mascote ${displayName}`} />
+  </div>;
 }

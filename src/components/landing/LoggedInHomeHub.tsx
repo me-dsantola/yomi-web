@@ -335,6 +335,8 @@ export function LoggedInHomeHub({
                     />
                   ) : (
                     <BlobatarCompanion
+                      context="welcome"
+                      animated={cloudState?.profile?.blobatarAnimated !== false}
                       mascotName={cloudState?.mascotName || 'Kuro'}
                       seed={cloudState?.profile?.blobatarSeed}
                       expression={cloudState?.profile?.blobatarExpression}

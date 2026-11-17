@@ -432,6 +432,8 @@ export default function ContaDashboardPage() {
                 ) : (
                   <div className="rounded-3xl border-4 border-[#0E0E14] bg-[#14141C] p-2 shadow-xl w-fit">
                     <BlobatarCompanion
+                      context="profile"
+                      animated={cloudState?.profile?.blobatarAnimated !== false}
                       chaptersRead={readChaptersCount}
                       accentColor={profileAccent}
                       mascotName={cloudState.mascotName}
@@ -948,6 +950,8 @@ export default function ContaDashboardPage() {
 
             <div className="flex items-center gap-4 rounded-2xl border border-white/[0.07] bg-black/30 p-4">
               <BlobatarCompanion
+                context="profile"
+                animated={cloudState?.profile?.blobatarAnimated !== false}
                 mascotName={editMascotName || 'Kuro'}
                 expression={editExpression}
                 accentColor={argbIntToHex(editAccentArgb)}
