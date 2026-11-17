@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-yomi-kuro \"node tests/firestore/check.mjs\""
   },
   "dependencies": {
     "@tanstack/react-query": "^5.66.0",

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { YomiBloubCompanion } from './bloub/YomiBloubCompanion';
 import type { MascotContext } from './bloub/yomi-renderer';
+import type { Equipment } from './bloub/cosmetics';
 import {
   idle,
   happy,
@@ -104,10 +105,11 @@ export interface BlobatarCompanionProps {
   className?: string;
   context?: MascotContext;
   animated?: boolean;
+  equipment?: Equipment;
 }
 
 /** Compatibility wrapper: saved Blobatar preferences keep their existing IDs. */
-export function BlobatarCompanion({name,mascotName,hue,accentColor,shape='auto',background='squircle',darkContainer,expression='happy',size=76,followPointer=true,interactiveCycle=true,className,context,animated=true}:BlobatarCompanionProps) {
+export function BlobatarCompanion({name,mascotName,hue,accentColor,shape='auto',background='squircle',darkContainer,expression='happy',size=76,followPointer=true,interactiveCycle=true,className,context,animated=true,equipment}:BlobatarCompanionProps) {
   const [cycleOffset,setCycleOffset]=useState<number|null>(null);
   const themePreset=useReaderStore(s=>s.themePreset);
   const displayName=mascotName||name||'Kuro';
@@ -115,7 +117,7 @@ export function BlobatarCompanion({name,mascotName,hue,accentColor,shape='auto',
   const pixelSize=typeof size==='number'?size:size==='sm'?64:size==='lg'?112:80;
   const framed=darkContainer??(background==='squircle'||background===true);
   const ids:Record<string,string>={idle:'neutre',happy:'heureux',love:'heureux',wink:'heureux',smug:'fier',surprised:'surpris',thinking:'attentif',shy:'timide',sleepy:'somnolent',sad:'triste',mad:'colere',unsure:'curieux',scared:'effraye',sick:'confus'};
-  const shapes:Record<string,string>={auto:'goutte',round:'cercle',organic:'galet',boxy:'squircle',capsule:'capsule',nub:'goutte',cloud:'nuage',droplet:'goutte',hexagon:'hexagone',sun:'cercle',triangle:'triangle'};
+  const shapes:Record<string,string>={auto:'cercle',round:'cercle',organic:'galet',boxy:'squircle',capsule:'capsule',nub:'goutte',cloud:'nuage',droplet:'goutte',hexagon:'hexagone',sun:'cercle',triangle:'triangle'};
   const selected=cycleOffset===null?expression:BLOBATAR_EXPRESSIONS[cycleOffset%BLOBATAR_EXPRESSIONS.length].id;
   useEffect(()=>setCycleOffset(null),[expression]);
   const tap=()=>{if(interactiveCycle)setCycleOffset(prev=>((prev??Math.max(0,BLOBATAR_EXPRESSIONS.findIndex(e=>e.id===expression)))+1)%BLOBATAR_EXPRESSIONS.length);};
@@ -124,7 +126,7 @@ export function BlobatarCompanion({name,mascotName,hue,accentColor,shape='auto',
     aria-label={`Mascote ${displayName}${interactiveCycle?' — toque para interagir':''}`} title={displayName}
     className={cn('relative inline-flex items-center justify-center rounded-3xl',framed&&'border border-white/12 bg-[#101529]',interactiveCycle&&'cursor-pointer',className)}
     style={{width:pixelSize,height:pixelSize}}>
-      <YomiBloubCompanion size={pixelSize} shape={shapes[shape]??'goutte'} expression={ids[selected]??'attentif'} hue={effectiveHue}
+      <YomiBloubCompanion size={pixelSize} shape={shapes[shape]??'cercle'} expression={ids[selected]??'attentif'} hue={effectiveHue} equipment={equipment}
         follow={followPointer&&pixelSize>=64} paused={!animated||pixelSize<48}
         context={context??(pixelSize>=74?'profile':'reader')} label={`Mascote ${displayName}`} />
   </div>;

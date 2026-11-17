@@ -3,6 +3,8 @@ import { SHAPE_BY_ID, mixHex } from './bot/skins';
 import { EXPRESSION_BY_ID } from './bot/expressions';
 import { STATE_BY_ID, type StateId } from './bot/states';
 import { DEMI_VIEWBOX, RAYON } from './bot/repere';
+import { CosmeticRenderer } from './cosmetic-renderer';
+import { EMPTY_EQUIPMENT, sanitizeEquipment, ITEMS, type Equipment } from './cosmetics';
 
 const NS='http://www.w3.org/2000/svg';
 let serial=0;
@@ -33,7 +35,7 @@ export class YomiBloub {
  clock=0;
  state:StateId='idle';
  appearance=PALETTES.espacial;
- shape='goutte';
+ shape='cercle';
  expression='attentif';
  paused=false;
  follow=true;
@@ -67,7 +69,9 @@ export class YomiBloub {
  private dotsBack:Element;
  private dotsFront:Element;
  private notify:Element;
- private screenListener=()=>{this.last=0;this.sync();};
+ private cosmetics=new CosmeticRenderer();
+ private equipment:Equipment=EMPTY_EQUIPMENT;
+ private screenListener=()=>{this.last=0;if(this.media.matches&&this.context!=='manual'){this.setState('idle');this.returnAt=Infinity;}this.sync();};
  private move=(e:PointerEvent)=>{if(e.pointerType!=='touch')this.pointer={x:e.clientX,y:e.clientY};};
  private leave=()=>{this.pointer=null;this.engine.setLook(null,this.clock);};
  constructor(private host:HTMLElement, initial:{shape?:string;expression?:string}={}){
@@ -85,7 +89,7 @@ export class YomiBloub {
   this.back=node('g',{fill:'none','stroke-linecap':'round'});this.front=node('g',{fill:'none','stroke-linecap':'round'});
   this.dotsBack=node('g');this.dotsFront=node('g');
   this.backdrop=node('path');this.body=node('path',{mask:`url(#${this.uid}-mask)`});this.notify=node('circle');
-  this.svg.append(this.back,this.dotsBack,this.backdrop,this.body,this.dotsFront,this.notify,this.front);host.append(this.svg);
+  this.svg.append(this.cosmetics.behind,this.back,this.dotsBack,this.backdrop,this.body,this.dotsFront,this.notify,this.front,this.cosmetics.front);host.append(this.svg);
   this.observer=new IntersectionObserver(entries=>{this.visible=entries[0]?.isIntersecting??false;this.last=0;this.sync();});this.observer.observe(host);
   this.media.addEventListener('change',this.screenListener);document.addEventListener('visibilitychange',this.screenListener);
   host.addEventListener('pointermove',this.move);host.addEventListener('pointerleave',this.leave);
@@ -97,12 +101,13 @@ export class YomiBloub {
  setPalette(id:string){if(PALETTES[id])this.setAppearance(PALETTES[id]);}
  setAppearance(p:Appearance){this.colorFrom=this.colors();this.appearance={...p};this.colorAt=this.clock;this.changed();}
  private colors():Appearance{const t=Math.min(1,Math.max(0,(this.clock-this.colorAt)/.65)),k=t*t*(3-2*t);return Object.fromEntries(Object.keys(this.appearance).map(key=>[key,mixHex(this.colorFrom[key as keyof Appearance],this.appearance[key as keyof Appearance],k)])) as Appearance;}
- setPaused(value:boolean){this.paused=value;this.last=0;this.sync();}
+ setPaused(value:boolean){this.paused=value;this.last=0;if(value&&this.context!=='manual'){this.setState('idle');this.returnAt=Infinity;}this.sync();}
  setFollow(value:boolean){this.follow=value;if(!value)this.leave();}
+ setEquipment(value:Equipment){this.equipment=sanitizeEquipment(value,new Set(ITEMS.map(i=>i.id)));this.paint();}
  setContext(context:MascotContext){
   this.context=context;this.gestureIndex=0;this.nextGesture=this.clock+24;
   const opening:Record<MascotContext,StateId>={manual:'idle',welcome:'wink',profile:'orbit',library:'thinking',reader:'idle',complete:'burst',empty:'wide'};
-  this.setState(opening[context]);this.returnAt=context==='reader'||context==='manual'?Infinity:this.clock+(context==='complete'?3.6:2.8);
+  this.setState(this.paused||this.media.matches?'idle':opening[context]);this.returnAt=this.paused||this.media.matches||context==='reader'||context==='manual'?Infinity:this.clock+(context==='complete'?3.6:2.8);
  }
  react(){if(this.context==='reader')return;this.setState('wink');this.returnAt=this.clock+2;this.nextGesture=this.clock+28;}
  private changed(){if(this.paused||this.media.matches)this.clock+=1;this.paint();}
@@ -142,6 +147,7 @@ export class YomiBloub {
    });
   };drawDots(this.dotsBack,f.dotsBehind);drawDots(this.dotsFront,!f.dotsBehind);
   attrs(this.notify,{cx:f.notif?.x??0,cy:f.notif?.y??0,r:f.notif?.r??0,fill:p.accent});
+  this.cosmetics.draw(f,this.equipment,at);
  }
  destroy(){if(this.disposed)return;this.disposed=true;cancelAnimationFrame(this.raf);this.observer.disconnect();this.media.removeEventListener('change',this.screenListener);document.removeEventListener('visibilitychange',this.screenListener);this.host.removeEventListener('pointermove',this.move);this.host.removeEventListener('pointerleave',this.leave);this.svg.remove();}
 }

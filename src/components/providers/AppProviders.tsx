@@ -24,6 +24,7 @@ import {
   type YomiThemePreset,
 } from '@/lib/store/readerStore';
 import { AuthModal } from '@/components/auth/AuthModal';
+import { KuroAccountSeasons } from '@/components/brand/bloub/KuroAccountSeasons';
 
 type AuthModalMode = 'login' | 'register';
 
@@ -270,6 +271,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <AuthContext.Provider value={value}>
         {children}
+        <KuroAccountSeasons uid={user?.uid??null} />
         <AuthModal
           open={authModalOpen}
           initialMode={authModalMode}
