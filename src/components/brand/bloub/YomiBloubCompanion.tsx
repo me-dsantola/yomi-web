@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { YomiBloub, type MascotContext } from './yomi-renderer';
 import type { StateId } from './bot/states';
 import { EMPTY_EQUIPMENT, type Equipment } from './cosmetics';
@@ -20,8 +20,18 @@ export interface YomiBloubCompanionProps {
  label?:string;
  equipment?:Equipment;
 }
+/** Keep the imperative SVG renderer outside server-rendered markup. */
+export function YomiBloubCompanion(props: YomiBloubCompanionProps) {
+ const [mounted, setMounted] = useState(false);
+ useEffect(() => { setMounted(true); }, []);
+ if (!mounted) {
+  const size = props.size ?? 160;
+  return <div aria-hidden="true" style={{width:size,height:size}} />;
+ }
+ return <MountedYomiBloubCompanion {...props} />;
+}
 /** Experimental React adapter. Does not replace any existing profile data. */
-export function YomiBloubCompanion({state='idle',expression='attentif',shape='cercle',palette='espacial',paused=false,loading=false,follow=true,size=160,context='manual',hue,label='Kuro, seu companheiro de leitura',equipment}:YomiBloubCompanionProps){
+function MountedYomiBloubCompanion({state='idle',expression='attentif',shape='cercle',palette='espacial',paused=false,loading=false,follow=true,size=160,context='manual',hue,label='Kuro, seu companheiro de leitura',equipment}:YomiBloubCompanionProps){
  const wardrobe=useCosmetics();
  const host=useRef<HTMLDivElement>(null);
  const renderer=useRef<YomiBloub|null>(null);
