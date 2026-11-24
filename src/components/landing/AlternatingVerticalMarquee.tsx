@@ -23,7 +23,6 @@ function MarqueeMangaCard({
   onActivateCard,
   isClone = false,
 }: MarqueeCardProps) {
-  const accent = work.accentColor ?? '#8B5CF6';
   const primaryGenres = work.tags.slice(0, 2);
   const lastPointerTypeRef = useRef<string>('');
 
@@ -60,18 +59,8 @@ function MarqueeMangaCard({
           lastPointerTypeRef.current = 'touch';
         }}
         onClick={handleCardClick}
-        style={
-          {
-            '--card-accent': accent,
-            borderColor: isSelected ? accent : undefined,
-            boxShadow: isSelected
-              ? `0 22px 50px -14px ${accent}`
-              : undefined,
-          } as React.CSSProperties
-        }
-        className={`group/card transform-gpu [backface-visibility:hidden] relative block aspect-[3/4.2] w-full overflow-hidden rounded-2xl sm:rounded-3xl border bg-[#0D0D14] shadow-xl transition-all duration-300 ease-out hover:scale-[1.025] hover:border-white/30 hover:shadow-[0_22px_50px_-14px_var(--card-accent)] hover:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 ${
-          isSelected ? 'scale-[1.025] z-10' : 'border-white/10'
-        }`}
+        data-selected={isSelected || undefined}
+        className="yomi-work-card group/card relative block aspect-[3/4.2] w-full rounded-2xl bg-[#0D0D14] sm:rounded-3xl"
       >
         {/* Full Cover Art (isolated compositing layer prevents overlay flicker) */}
         <div className="absolute inset-0 overflow-hidden [transform:translateZ(0)]">
@@ -81,9 +70,7 @@ function MarqueeMangaCard({
             alt={isClone ? '' : `Capa de ${work.title}`}
             loading="lazy"
             decoding="async"
-            className={`h-full w-full object-cover object-top transition-transform duration-500 ease-out will-change-transform group-hover/card:scale-105 group-focus-within/card:scale-105 ${
-              isSelected ? 'scale-105' : ''
-            }`}
+            className="yomi-work-cover h-full w-full object-cover object-top"
             onError={(e) => {
               e.currentTarget.onerror = null;
               e.currentTarget.src = '/brand/icon-1024.png';
@@ -208,7 +195,7 @@ export function AlternatingVerticalMarquee({
               return (
                 <div
                   key={colIdx}
-                  className={`group/col relative h-full overflow-hidden ${
+                  className={`group/col relative h-full ${
                     cfg.mobileVisible ? 'block' : 'hidden lg:block'
                   }`}
                 >

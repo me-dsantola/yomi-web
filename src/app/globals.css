@@ -86,7 +86,48 @@
   will-change: transform;
 }
 
+.yomi-work-card {
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgb(255 255 255 / 8%);
+  transition: border-color .3s ease, box-shadow .3s ease;
+}
+
+.yomi-work-cover {
+  transition: transform .3s ease;
+}
+
+.yomi-work-card:is(:focus-visible, [data-selected="true"]) {
+  border-color: rgb(255 255 255 / 15%);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 35%);
+}
+
+.yomi-work-card:focus-visible {
+  outline: 2px solid rgb(255 255 255 / 70%);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .yomi-work-card:hover {
+    border-color: rgb(255 255 255 / 15%);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 35%);
+  }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .yomi-work-card:hover .yomi-work-cover { transform: scale(1.02); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .yomi-work-card:is(:focus-visible, [data-selected="true"]) .yomi-work-cover {
+    transform: scale(1.02);
+  }
+}
+
 .yomi-marquee-mask {
+  isolation: isolate;
+  overflow: hidden;
+  padding-inline: clamp(12px, 2vw, 26px);
   mask-image: linear-gradient(
     to bottom,
     transparent 0%,
