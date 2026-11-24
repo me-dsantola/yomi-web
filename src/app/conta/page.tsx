@@ -51,7 +51,7 @@ import {
 function profileBanner(path?: string) {
   const preset = path?.replace(/^preset:/, '') || 'horizonte_distante';
   return ['horizonte_distante', 'lua_vermelha', 'portal_da_noite'].includes(preset)
-    ? '/brand/banners/' + preset + '.png'
+    ? '/brand/banners/' + preset + '.webp'
     : null;
 }
 

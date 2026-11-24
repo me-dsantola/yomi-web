@@ -327,6 +327,15 @@ export default function QuickReaderPage() {
       const container = webtoonContainerRef.current;
       if (!container) return;
 
+      const marker = window.innerHeight * 0.45;
+      const bounds = container.getBoundingClientRect();
+      const hit = document.elementFromPoint(bounds.left + bounds.width / 2, marker);
+      const page = hit?.closest<HTMLElement>("[data-page-index]");
+      if (page && container.contains(page) && page.getBoundingClientRect().height > 2) {
+        setCurrentPage(Number(page.dataset.pageIndex));
+        return;
+      }
+
       const nodes = container.querySelectorAll<HTMLElement>("[data-page-index]");
       if (nodes.length === 0) return;
 

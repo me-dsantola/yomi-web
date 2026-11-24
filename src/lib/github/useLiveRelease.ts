@@ -14,8 +14,8 @@ export function useLiveRelease(initialRelease?: YomiReleaseInfo) {
       return res.json();
     },
     placeholderData: initialRelease,
-    staleTime: 0,
-    refetchOnMount: 'always',
+    staleTime: 60_000,
+
     retry: 1,
   });
 
