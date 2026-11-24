@@ -4,6 +4,8 @@ import { mkdir } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 
 const { chromium, webkit } = await import(pathToFileURL(process.env.PLAYWRIGHT_MODULE).href);
+assert.equal(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID, 'demo-yomi-kuro');
+assert.equal(process.env.NEXT_PUBLIC_YOMI_EMULATORS, '1');
 const base = 'http://127.0.0.1:3100';
 const workId = '11111111-1111-4111-8111-111111111111';
 const chapterId = '22222222-2222-4222-8222-222222222222';
@@ -24,19 +26,15 @@ async function fixture(context) {
   await context.addInitScript(() => {
     localStorage.setItem('yomi-cookie-consent-v1', '{"mode":"essential"}');
   });
-  await context.route('**/*', async route => {
-    const request=route.request(), url=new URL(request.url());
-    if(request.resourceType()==='image') return route.fulfill({contentType:'image/svg+xml',body:image});
-    if(url.pathname.startsWith('/api/md/')) {
-      if(url.pathname.includes('/at-home/')) return route.fulfill({json:{baseUrl:base,chapter:{hash:'test',data:['1.png','2.png','3.png','4.png','5.png'],dataSaver:[]}}});
-      if(url.pathname.includes('/chapter/')) return route.fulfill({json:{data:chapter}});
-      if(url.pathname.endsWith('/feed')) return route.fulfill({json:{data:url.searchParams.get('translatedLanguage[]')==='pt-br'?[chapter]:[],total:url.searchParams.get('translatedLanguage[]')==='pt-br'?1:0}});
-      if(url.pathname=== '/api/md/manga') return route.fulfill({json:{data:[work],total:1}});
-      return route.fulfill({json:{data:work}});
-    }
-    if(['127.0.0.1','localhost'].includes(url.hostname)) return route.continue();
-    return route.abort();
+  await context.route('**/api/md/**', async route => {
+    const url = new URL(route.request().url());
+    if(url.pathname.includes('/at-home/')) return route.fulfill({json:{baseUrl:base,chapter:{hash:'test',data:['1.png','2.png','3.png','4.png','5.png'],dataSaver:[]}}});
+    if(url.pathname.includes('/chapter/')) return route.fulfill({json:{data:chapter}});
+    if(url.pathname.endsWith('/feed')) return route.fulfill({json:{data:url.searchParams.get('translatedLanguage[]')==='pt-br'?[chapter]:[],total:url.searchParams.get('translatedLanguage[]')==='pt-br'?1:0}});
+    if(url.pathname=== '/api/md/manga') return route.fulfill({json:{data:[work],total:1}});
+    return route.fulfill({json:{data:work}});
   });
+  await context.route(url => /\\.(png|jpe?g|webp|svg)$/.test(url.pathname) || ['/api/cover','/api/page'].includes(url.pathname), route => route.fulfill({contentType:'image/svg+xml',body:image}));
 }
 async function noOverflow(page) {
   const sizes=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));
