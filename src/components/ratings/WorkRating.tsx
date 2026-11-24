@@ -11,6 +11,7 @@ export function WorkRating({ workId }: { workId: string }) {
   const queryClient = useQueryClient();
   const id = cleanMangaDexId(workId).toLowerCase();
   const valid = isUuid(id);
+  const [preview, setPreview] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [failed, setFailed] = useState(false);
@@ -19,6 +20,7 @@ export function WorkRating({ workId }: { workId: string }) {
   const vote = async (score: number) => {
     if (!user) { openAuthModal('login'); return; }
     if (saving) return;
+    setPreview(null);
     setSaving(true); setMessage(''); setFailed(false);
     try {
       await saveWorkRating(id, user.uid, score);
@@ -37,23 +39,24 @@ export function WorkRating({ workId }: { workId: string }) {
   const count = summary.data?.count ?? 0;
   const average = count > 0 ? (summary.data!.total / count).toFixed(1).replace('.', ',') : null;
   return (
-    <section aria-label="Avaliação da comunidade" className="rounded-2xl border border-white/10 bg-white/[0.025] p-2 sm:p-4 space-y-3">
+    <section aria-label="Avaliação da comunidade" className="rounded-2xl border border-white/10 max-w-md bg-gradient-to-br from-amber-300/[0.07] to-white/[0.025] p-4 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-xs font-semibold text-white/75">Avaliação da comunidade</span>
-        <span className="text-xs text-white/55" aria-live="polite">
+        <span className="text-sm font-semibold text-white/90">Avaliação da comunidade</span>
+        <span className="rounded-full bg-white/[0.06] px-3 py-1 text-xs tabular-nums text-white/75" aria-live="polite">
           {summary.isPending ? 'Carregando notas…' : summary.isError ? 'Notas indisponíveis' : average ? `${average} / 5 · ${count} ${count === 1 ? 'avaliação' : 'avaliações'}` : 'Seja o primeiro a avaliar'}
         </span>
       </div>
-      <div role="group" aria-label="Sua nota" aria-busy={saving} className="flex flex-wrap items-center gap-0">
+      <div role="group" aria-label="Sua nota" aria-busy={saving} onMouseLeave={() => setPreview(null)} className="flex flex-wrap items-center gap-y-2">
         {[1, 2, 3, 4, 5].map((score) => (
           <button key={score} type="button" aria-label={`Avaliar com ${score} ${score === 1 ? 'estrela' : 'estrelas'}`} aria-pressed={mine.data === score}
             disabled={saving || Boolean(user && (mine.isPending || mine.isError))}
+            onMouseEnter={() => setPreview(score)} onFocus={() => setPreview(score)} onBlur={() => setPreview(null)}
             onClick={() => void vote(score)}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--yomi-accent)] transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--yomi-accent)] disabled:opacity-40">
-            <Star aria-hidden="true" className="h-5 w-5" fill={(mine.data ?? 0) >= score ? 'currentColor' : 'none'} />
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full text-amber-300 transition hover:bg-amber-300/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--yomi-accent)] disabled:opacity-40">
+            <Star aria-hidden="true" className="h-6 w-6" fill={(preview ?? mine.data ?? 0) >= score ? 'currentColor' : 'none'} />
           </button>
         ))}
-        <span className="pl-2 text-[11px] text-white/45">{saving ? 'Salvando…' : user ? mine.data ? `Sua nota: ${mine.data} / 5` : 'Qual foi sua experiência?' : 'Entre para avaliar'}</span>
+        <span className="basis-full text-xs text-white/65">{saving ? 'Salvando…' : user ? mine.data ? `Sua nota: ${mine.data} / 5` : 'Toque em uma estrela para avaliar' : 'Entre para avaliar'}</span>
       </div>
       {summary.isError && <button type="button" onClick={() => void summary.refetch()} className="text-xs text-white/65 underline">Recarregar notas</button>}
       {mine.isError && user && <button type="button" onClick={() => void mine.refetch()} className="text-xs text-white/65 underline">Recarregar sua avaliação</button>}
