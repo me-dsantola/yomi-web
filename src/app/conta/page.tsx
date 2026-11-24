@@ -48,6 +48,13 @@ import {
   BlobatarCompanion,
 } from '@/components/brand/BlobatarCompanion';
 
+function profileBanner(path?: string) {
+  const preset = path?.replace(/^preset:/, '') || 'horizonte_distante';
+  return ['horizonte_distante', 'lua_vermelha', 'portal_da_noite'].includes(preset)
+    ? '/brand/banners/' + preset + '.png'
+    : null;
+}
+
 const ACCENT_SWATCHES = [
   { hex: '#FF2A55', argb: 0xffff2a55, label: 'Carmesim' },
   { hex: '#8B5CF6', argb: 0xff8b5cf6, label: 'Violeta' },
@@ -420,28 +427,28 @@ export default function ContaDashboardPage() {
           <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0E0E14]">
             {/* Banner */}
             <div
-              className="h-36 sm:h-44 w-full bg-cover bg-center relative"
+              className="h-48 sm:h-56 w-full bg-cover bg-center relative"
               style={{
-                backgroundImage: (originals.banner || cloudState.bannerDataUrl)
-                  ? `url(${originals.banner || cloudState.bannerDataUrl})`
+                backgroundImage: (originals.banner || cloudState.bannerDataUrl || profileBanner(cloudState.profile.bannerImagePath))
+                  ? `url(${originals.banner || cloudState.bannerDataUrl || profileBanner(cloudState.profile.bannerImagePath)})`
                   : `radial-gradient(circle at 20% 30%, ${profileAccent}44, #141424 60%, #070709)`,
               }}
             >
               <div className="absolute inset-0 bg-gradient-to-t from-[#0E0E14] via-[#0E0E14]/40 to-transparent" />
             </div>
 
-            <div className="px-6 sm:px-8 pb-6 -mt-12 relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-              <div className="flex flex-col sm:flex-row sm:items-end gap-5">
+            <div className="px-6 sm:px-8 pb-6 -mt-14 relative z-10 flex flex-col items-center gap-5 text-center">
+              <div className="flex flex-col items-center gap-3">
                 {(originals.avatar || cloudState.avatarDataUrl) &&
                 !cloudState.profile.useBlobatarAsAvatar ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={originals.avatar || cloudState.avatarDataUrl || undefined}
                     alt={cloudState.profile.name || 'Avatar'}
-                    className="h-24 w-24 rounded-3xl border-4 border-[#0E0E14] object-cover shadow-xl"
+                    className="h-28 w-28 rounded-full border-4 border-[#0E0E14] object-cover shadow-xl"
                   />
                 ) : (
-                  <div className="rounded-3xl border-4 border-[#0E0E14] bg-[#14141C] p-2 shadow-xl w-fit">
+                  <div className="grid h-28 w-28 place-items-center rounded-full border-4 border-[#0E0E14] bg-[#14141C] p-2 shadow-xl">
                     <BlobatarCompanion
                       context="profile"
                       animated={cloudState?.profile?.blobatarAnimated !== false}
@@ -456,7 +463,7 @@ export default function ContaDashboardPage() {
                 )}
 
                 <div className="space-y-1.5">
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center justify-center gap-2">
                     <h1 className="font-display text-2xl sm:text-3xl font-bold text-white">
                       {cloudState.profile.name ||
                         cloudState.userDisplayName ||
@@ -485,7 +492,7 @@ export default function ContaDashboardPage() {
               </div>
 
               {/* Actions */}
-              <div className="flex flex-wrap items-center gap-2.5">
+              <div className="flex flex-wrap items-center justify-center gap-2.5">
                 <button
                   type="button"
                   onClick={openEditProfile}

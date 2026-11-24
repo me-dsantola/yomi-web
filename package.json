@@ -1,6 +1,6 @@
 {
   "name": "yomi-web",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "private": true,
   "description": "Site oficial do leitor YOMI para Android e Web.",
   "scripts": {

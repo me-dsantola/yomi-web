@@ -91,6 +91,10 @@ function MarqueeMangaCard({
           />
         </div>
 
+        <div className={`pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/95 via-black/85 to-transparent px-3 pb-5 pt-3 text-white transition-opacity group-hover/card:opacity-100 group-focus-within/card:opacity-100 ${isSelected ? 'opacity-100' : 'opacity-0'}`}>
+          <p className="truncate text-[11px] font-semibold">{work.author}{work.year ? ` · ${work.year}` : ''}</p>
+          <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-white/80">{work.description}</p>
+        </div>
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-[linear-gradient(to_top,#09090df5_0%,#09090de8_75%,transparent_100%)] px-3 pb-3 pt-7 sm:px-4 sm:pb-4">
           <h3 className="break-words font-display text-sm font-bold leading-tight text-white line-clamp-2 sm:text-base">{work.title}</h3>
           <p className="mt-1 truncate text-[11px] text-white/75">{primaryGenres[0]?.name || work.author}</p>
