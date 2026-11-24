@@ -44,6 +44,7 @@ import type {
   YomiMangaEntry,
   YomiReadingList,
 } from '@/lib/backup/kuroCodec';
+import { WorkRating } from '@/components/ratings/WorkRating';
 import { CommentsSection } from '@/components/comments/CommentsSection';
 
 function toCloudMangaEntry(work: MangaDexWork): YomiMangaEntry {
@@ -511,6 +512,7 @@ export default function ObraDetailsPage() {
               {work.altTitle && (
                 <p className="text-xs text-white/45">{work.altTitle}</p>
               )}
+              <WorkRating workId={work.id} />
             </div>
 
             <p className="text-xs sm:text-sm text-white/70 leading-relaxed whitespace-pre-line line-clamp-5">

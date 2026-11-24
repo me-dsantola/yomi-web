@@ -192,6 +192,23 @@ function getLocalStorageKeys(
   const keys = new Set<string>();
   if (canonical) keys.add(`${LOCAL_STORAGE_PREFIX}${canonical}`);
   if (raw) keys.add(`${LOCAL_STORAGE_PREFIX}${raw}`);
+  // Recover drafts saved under legacy target IDs when the current route is canonical.
+  if (canonical && typeof window !== 'undefined') {
+    try {
+      const storage = window.localStorage;
+      for (let index = 0; index < storage.length; index += 1) {
+        const key = storage.key(index);
+        if (
+          key?.startsWith(LOCAL_STORAGE_PREFIX) &&
+          normalizeCommentTargetId(key.slice(LOCAL_STORAGE_PREFIX.length), targetType) === canonical
+        ) {
+          keys.add(key);
+        }
+      }
+    } catch {
+      // Storage may be unavailable in restricted browser contexts.
+    }
+  }
   return Array.from(keys);
 }
 

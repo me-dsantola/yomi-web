@@ -41,6 +41,41 @@ service cloud.firestore {
         && (addedSelf || removedSelf);
     }
 
+
+    // One editable vote per account; vote and aggregate must change atomically.
+    function validWorkRating(workId, next) {
+      let root = /databases/$(database)/documents/workRatings/$(workId);
+      let ownVote = /databases/$(database)/documents/workRatings/$(workId)/votes/$(request.auth.uid);
+      let hadVote = exists(ownVote);
+      let oldScore = hadVote ? get(ownVote).data.score : 0;
+      let newVote = getAfter(ownVote).data;
+      let oldCount = exists(root) ? get(root).data.count : 0;
+      let oldTotal = exists(root) ? get(root).data.total : 0;
+      return workId.matches('^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')
+        && newVote.keys().hasOnly(['score', 'updatedAt'])
+        && newVote.score is int && newVote.score >= 1 && newVote.score <= 5
+        && newVote.updatedAt == request.time
+        && next.keys().hasOnly(['workId', 'count', 'total', 'rankScore', 'updatedAt'])
+        && next.workId == workId
+        && next.count is int && next.count >= 1
+        && next.total is int && next.total >= next.count && next.total <= next.count * 5
+        && next.count == oldCount + (hadVote ? 0 : 1)
+        && next.total == oldTotal + newVote.score - oldScore
+        && next.rankScore == (next.total + 17.5) / (next.count + 5)
+        && next.updatedAt == request.time;
+    }
+    match /workRatings/{workId} {
+      allow read: if true;
+      allow create, update: if isSignedIn() && validWorkRating(workId, request.resource.data);
+      allow delete: if false;
+      match /votes/{uid} {
+        allow read: if isSignedIn() && request.auth.uid == uid;
+        allow create, update: if isSignedIn() && request.auth.uid == uid
+          && validWorkRating(workId, getAfter(/databases/$(database)/documents/workRatings/$(workId)).data);
+        allow delete: if false;
+      }
+    }
+
     // Backups e sincronização na nuvem (.kuro v4) isolados por usuário
     match /users/{userId} {
       allow read, write: if isSignedIn() && request.auth.uid == userId;

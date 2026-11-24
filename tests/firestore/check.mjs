@@ -11,6 +11,7 @@ import {
   serverTimestamp,
   Timestamp,
   runTransaction,
+  writeBatch,
   getDocs,
   collection,
 } from "firebase/firestore";
@@ -35,6 +36,34 @@ try {
   const alice = env.authenticatedContext("alice").firestore(),
     bob = env.authenticatedContext("bob").firestore(),
     anon = env.unauthenticatedContext().firestore();
+
+  const workId = '11111111-1111-4111-8111-111111111111';
+  const rate = (db, uid, score, count, total, overrides = {}) => {
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'workRatings', workId, 'votes', uid), { score, updatedAt: serverTimestamp() });
+    batch.set(doc(db, 'workRatings', workId), {
+      workId, count, total, rankScore: (total + 17.5) / (count + 5),
+      updatedAt: serverTimestamp(), ...overrides,
+    });
+    return batch.commit();
+  };
+  await assertFails(rate(anon, 'alice', 5, 1, 5));
+  await assertFails(rate(bob, 'alice', 5, 1, 5));
+  await assertFails(rate(alice, 'alice', 6, 1, 6));
+  await assertFails(rate(alice, 'alice', 2.5, 1, 2.5));
+  await assertFails(setDoc(doc(alice, 'workRatings', workId, 'votes', 'alice'), { score: 5, updatedAt: serverTimestamp() }));
+  await assertSucceeds(rate(alice, 'alice', 5, 1, 5));
+  await assertSucceeds(getDoc(doc(anon, 'workRatings', workId)));
+  await assertFails(getDoc(doc(bob, 'workRatings', workId, 'votes', 'alice')));
+  await assertFails(rate(alice, 'alice', 4, 2, 9));
+  await assertFails(rate(alice, 'alice', 4, 1, 4, { rankScore: 100 }));
+  await assertSucceeds(rate(alice, 'alice', 3, 1, 3));
+  await assertSucceeds(rate(bob, 'bob', 5, 2, 8));
+  await assertFails(deleteDoc(doc(alice, 'workRatings', workId, 'votes', 'alice')));
+  await assertFails(setDoc(doc(alice, 'workRatings', workId), { workId, count: 1000, total: 5000, rankScore: 5, updatedAt: serverTimestamp() }));
+  assert.equal((await getDoc(doc(alice, 'workRatings', workId))).data().count, 2);
+  console.log('PASS: authenticated ratings, score bounds, private votes, atomic aggregates, editable votes and forged ranking rejection');
+
   const item = (db, uid, id) => doc(db, "kuroUsers", uid, "items", id);
   const grant = (id) => ({ itemId: id, claimedAt: serverTimestamp() });
   await assertFails(setDoc(item(anon, "alice", "aurora"), grant("aurora")));

@@ -1,4 +1,5 @@
 'use client';
+import { fetchCommunityTrending } from '@/lib/firebase/ratings';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -209,9 +210,20 @@ export function FeaturedBillboardSection({
   initialWorks,
   compactSpacing = false,
 }: FeaturedBillboardSectionProps) {
-  const shouldReduceMotion = Boolean(useReducedMotion());
+  const reducedMotion = useReducedMotion();
+  const [hasHydrated, setHasHydrated] = useState(false);
+  useEffect(() => { setHasHydrated(true); }, []);
+  const shouldReduceMotion = hasHydrated && Boolean(reducedMotion);
   const queryClient = useQueryClient();
   const { user, openAuthModal } = useYomiAuth();
+
+  const { data: communityWorks } = useQuery({
+    queryKey: ['community-trending'],
+    queryFn: fetchCommunityTrending,
+    staleTime: 60_000,
+    retry: 1,
+  });
+  const hasCommunityRatings = Boolean(communityWorks?.length);
 
   const [works, setWorks] = useState<MangaDexWork[]>(() =>
     initialWorks && initialWorks.length > 0
@@ -227,6 +239,7 @@ export function FeaturedBillboardSection({
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const activeWork = works[activeIndex] ?? CURATED_POPULAR_WORKS[0];
+  const activeRating = communityWorks?.find((item) => item.id === activeWork.id)?.ratingSummary;
   const fallbackAccent = activeWork.accentColor ?? '#FF2A55';
   const [extractedAccents, setExtractedAccents] = useState<
     Record<string, string>
@@ -236,6 +249,12 @@ export function FeaturedBillboardSection({
 
   // Sincroniza rotação periódica do catálogo curado quando não houver lista fixa
   useEffect(() => {
+    if (communityWorks?.length) {
+      setWorks(communityWorks.slice(0, 5));
+      setSlide([0, 1]);
+      setProgress(0);
+      return;
+    }
     const syncRotation = () => {
       const rotated = selectTimeWindowFeaturedWorks(
         CURATED_POPULAR_WORKS,
@@ -252,7 +271,7 @@ export function FeaturedBillboardSection({
 
     const interval = setInterval(syncRotation, 60_000);
     return () => clearInterval(interval);
-  }, [initialWorks]);
+  }, [initialWorks, communityWorks]);
 
   // Extrai paleta cromática da capa ativa e armazena em cache leve (restrita a este componente)
   useEffect(() => {
@@ -450,8 +469,11 @@ export function FeaturedBillboardSection({
               id="billboard-heading"
               className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-white"
             >
-              Em alta no YOMI
+              {hasCommunityRatings ? 'Em alta no YOMI' : 'Destaques para descobrir'}
             </h2>
+            <p className="mt-2 text-xs text-white/50">
+              {hasCommunityRatings ? 'Escolhidos pelas avaliações da comunidade' : 'Descubra sua próxima leitura e ajude a formar o ranking'}
+            </p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -481,10 +503,17 @@ export function FeaturedBillboardSection({
         </motion.div>
 
         {/* Main Cinema Showcase Stage (Local Scoped Palette Only) */}
+        {activeRating && (
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-white/75" aria-live="polite">
+            <span className="text-[var(--yomi-accent)]">★ {(activeRating.total / activeRating.count).toFixed(1).replace('.', ',')}</span>
+            <span className="text-white/40">·</span>
+            <span>{activeRating.count} {activeRating.count === 1 ? 'avaliação' : 'avaliações'}</span>
+          </div>
+        )}
         <div
           role="region"
           aria-roledescription="carousel"
-          aria-label="Vitrine Em alta no YOMI"
+          aria-label={hasCommunityRatings ? "Vitrine Em alta no YOMI" : "Destaques para descobrir"}
           tabIndex={0}
           onKeyDown={handleStageKeyDown}
           onTouchStart={handleTouchStart}

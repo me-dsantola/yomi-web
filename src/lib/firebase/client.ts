@@ -1,6 +1,7 @@
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
 import {
   getAuth,
+  connectAuthEmulator,
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
@@ -12,7 +13,7 @@ import {
   type Auth,
   type User,
 } from 'firebase/auth';
-import { getFirestore, type Firestore } from 'firebase/firestore';
+import { connectFirestoreEmulator, getFirestore, type Firestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey:
@@ -30,6 +31,12 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || undefined,
 };
 
+function useLocalEmulators(): boolean {
+  return process.env.NEXT_PUBLIC_YOMI_EMULATORS === '1'
+    && typeof window !== 'undefined'
+    && ['localhost', '127.0.0.1'].includes(window.location.hostname);
+}
+
 let appInstance: FirebaseApp | null = null;
 let authInstance: Auth | null = null;
 let dbInstance: Firestore | null = null;
@@ -45,9 +52,11 @@ export function getFirebaseClient(): {
   }
   if (!authInstance) {
     authInstance = getAuth(appInstance);
+    if (useLocalEmulators()) connectAuthEmulator(authInstance, 'http://127.0.0.1:9099', { disableWarnings: true });
   }
   if (!dbInstance) {
     dbInstance = getFirestore(appInstance);
+    if (useLocalEmulators()) connectFirestoreEmulator(dbInstance, '127.0.0.1', 8780);
   }
   return { app: appInstance, auth: authInstance, db: dbInstance };
 }

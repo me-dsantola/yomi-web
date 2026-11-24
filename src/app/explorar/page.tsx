@@ -113,7 +113,7 @@ export default function ExplorarPage() {
               [
                 { id: "popular", label: "Mais Populares" },
                 { id: "latest", label: "Recém Atualizados" },
-                { id: "rating", label: "Melhor Avaliados" },
+                { id: "rating", label: "Notas MangaDex" },
                 { id: "title", label: "A–Z" },
               ] as const
             ).map((opt) => (

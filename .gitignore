@@ -11,3 +11,8 @@ coverage/
 firestore-debug.log
 firebase-debug.log
 next-env.d.ts
+
+# Browser validation output
+test-results/
+playwright-report/
+ui-debug.log
