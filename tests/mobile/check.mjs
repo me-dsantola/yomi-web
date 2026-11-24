@@ -48,23 +48,28 @@ try {
       for(const [width,height] of [[320,568],[390,844],[844,390],[1280,800]]) {
         const context=await browser.newContext({viewport:{width,height},isMobile:width<900,hasTouch:width<900,reducedMotion:'reduce'});
         await fixture(context);
-        const page=await context.newPage();
-        const pageErrors=[];page.on('pageerror',error=>pageErrors.push(page.url()+': '+error.message));
-        page.on('console', message => { if (message.type() === 'error') console.error(page.url(), message.text()); });
         for(const route of ['/','/explorar','/biblioteca','/conta','/obra/'+workId]) {
-          await page.goto(base+route);
-          await page.locator('main').waitFor();
-          await page.waitForTimeout(300);
-          assert.deepEqual(pageErrors,[], 'Page hydration: '+route);
-          await noOverflow(page);
+          const routePage = await context.newPage();
+          const routeErrors = [];
+          routePage.on('pageerror', error => routeErrors.push(error.message));
+          await routePage.goto(base+route);
+          await routePage.locator('main').waitFor();
+          await routePage.waitForTimeout(300);
+          assert.deepEqual(routeErrors,[], 'Page hydration: '+route);
+          await noOverflow(routePage);
           if (route.startsWith('/obra/')) {
-            const stars = page.getByRole('region', {name:'Avaliação da comunidade'}).getByRole('button', {name:/Avaliar com/});
+            const stars = routePage.getByRole('region', {name:'Avaliação da comunidade'}).getByRole('button', {name:/Avaliar com/});
             await stars.first().waitFor();
             const boxes = await Promise.all((await stars.all()).map(star=>star.boundingBox()));
             assert.equal(boxes.length,5);
             assert.ok(boxes.every(box=>box && box.width>=44 && box.height>=44 && Math.abs(box.y-boxes[0].y)<1), 'Rating stars must remain together with 44px touch targets');
           }
+          assert.deepEqual(routeErrors, [], 'Active page errors: '+route);
+          await routePage.close();
         }
+        const page=await context.newPage();
+        const pageErrors=[];
+        page.on('pageerror', error=>pageErrors.push(error.message));
         await page.goto(base+'/ler/'+chapterId);
         await page.getByRole('button',{name:'Pag. LTR',exact:true}).waitFor();
         await page.getByRole('button',{name:'Pag. LTR',exact:true}).click();
