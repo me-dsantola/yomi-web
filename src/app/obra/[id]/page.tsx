@@ -512,6 +512,7 @@ export default function ObraDetailsPage() {
               {work.altTitle && (
                 <p className="text-xs text-white/45">{work.altTitle}</p>
               )}
+              <WorkRating workId={work.id} />
             </div>
 
             <p className="text-xs sm:text-sm text-white/70 leading-relaxed whitespace-pre-line line-clamp-5">
@@ -841,8 +842,6 @@ export default function ObraDetailsPage() {
           </div>
         )}
       </section>
-
-      <WorkRating workId={work.id} />
 
       <CommentsSection
         targetId={cleanMangaDexId(work.id)}

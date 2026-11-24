@@ -42,7 +42,7 @@ service cloud.firestore {
     }
 
 
-    // One editable vote per authenticated account, with atomic aggregate updates.
+    // One editable vote per account; vote and aggregate must change atomically.
     function validWorkRating(workId, next) {
       let root = /databases/$(database)/documents/workRatings/$(workId);
       let ownVote = /databases/$(database)/documents/workRatings/$(workId)/votes/$(request.auth.uid);
@@ -51,90 +51,7 @@ service cloud.firestore {
       let newVote = getAfter(ownVote).data;
       let oldCount = exists(root) ? get(root).data.count : 0;
       let oldTotal = exists(root) ? get(root).data.total : 0;
-      return workId.matches('^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} e sincronização na nuvem (.kuro v4) isolados por usuário
-    match /users/{userId} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
-    }
-
-    // Kuro grants are immutable and separate from user-editable backups.
-    function ownKuro(uid) { return request.auth != null && request.auth.uid == uid; }
-    function seasonalClaim(itemId, at) {
-      let local = at - duration.value(3, 'h');
-      let day = local.month() * 100 + local.day();
-      return itemId in ['aurora', 'little_star']
-        || (itemId in ['winter_scarf', 'santa_hat'] && (day >= 1201 || day < 101))
-        || (itemId in ['witch_hat', 'pumpkin_orb'] && (day >= 1015 && day < 1101))
-        || (itemId in ['golden_aura'] && (day >= 1228 || day < 108))
-        || (itemId in ['tiny_book'] && (day >= 418 && day < 425));
-    }
-    function slotAllowed(uid, category, itemId) {
-      return itemId is string && (itemId == '' || ((
-        (category == 'aura' && itemId in ['aurora', 'golden_aura']) ||
-        (category == 'scarf' && itemId in ['winter_scarf']) ||
-        (category == 'hat' && itemId in ['santa_hat', 'witch_hat']) ||
-        (category == 'floating' && itemId in ['little_star', 'pumpkin_orb', 'tiny_book'])
-      ) && exists(/databases/$(database)/documents/kuroUsers/$(uid)/items/$(itemId))));
-    }
-    match /kuroUsers/{uid}/items/{itemId} {
-      allow read: if ownKuro(uid);
-      allow create: if ownKuro(uid) && seasonalClaim(itemId, request.time)
-        && request.resource.data.keys().hasOnly(['itemId', 'claimedAt'])
-        && request.resource.data.keys().hasAll(['itemId', 'claimedAt'])
-        && request.resource.data.itemId == itemId
-        && request.resource.data.claimedAt == request.time;
-      allow update, delete: if false;
-    }
-    match /kuroUsers/{uid}/state/equipment {
-      allow read: if ownKuro(uid);
-      allow create, update: if ownKuro(uid)
-        && request.resource.data.keys().hasOnly(['aura','scarf','hat','floating','updatedAt'])
-        && request.resource.data.keys().hasAll(['aura','scarf','hat','floating','updatedAt'])
-        && request.resource.data.updatedAt == request.time
-        && slotAllowed(uid, 'aura', request.resource.data.aura)
-        && slotAllowed(uid, 'scarf', request.resource.data.scarf)
-        && slotAllowed(uid, 'hat', request.resource.data.hat)
-        && slotAllowed(uid, 'floating', request.resource.data.floating);
-      allow delete: if false;
-    }
-
-    // Coleção compartilhada de comentários (Yomi Web + Yomi App Flutter)
-    match /comments/{commentId} {
-      allow read: if true;
-
-      allow create: if isSignedIn()
-        && request.resource.data.userId == request.auth.uid
-        && isValidCommentTarget()
-        && isValidCommentText(request.resource.data.text)
-        && request.resource.data.userName is string
-        && request.resource.data.userName.size() >= 1
-        && request.resource.data.userName.size() <= 100
-        && request.resource.data.isSpoiler is bool
-        && request.resource.data.likes == 0
-        && request.resource.data.likedBy is list
-        && request.resource.data.likedBy.size() == 0
-        && (
-          request.resource.data.createdAt is int
-          || request.resource.data.createdAt is timestamp
-        );
-
-      allow update: if isSignedIn() && (
-        isValidReactionUpdate()
-        || (
-          resource.data.userId == request.auth.uid
-          && request.resource.data.userId == resource.data.userId
-          && request.resource.data.targetId == resource.data.targetId
-          && request.resource.data.targetType == resource.data.targetType
-          && request.resource.data.createdAt == resource.data.createdAt
-          && isValidCommentText(request.resource.data.text)
-        )
-      );
-
-      allow delete: if isSignedIn()
-        && (resource.data.userId == request.auth.uid || isModerator());
-    }
-  }
-}
-)
+      return workId.matches('^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')
         && newVote.keys().hasOnly(['score', 'updatedAt'])
         && newVote.score is int && newVote.score >= 1 && newVote.score <= 5
         && newVote.updatedAt == request.time

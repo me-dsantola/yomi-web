@@ -2,7 +2,7 @@ name: Yomi quality
 on:
   pull_request:
   push:
-    branches: [main, fix/mobile-reader-comments-chapters-20261115]
+    branches: [main]
 permissions:
   contents: read
 concurrency:

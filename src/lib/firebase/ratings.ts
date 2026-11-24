@@ -40,8 +40,12 @@ export async function fetchCommunityTrending(): Promise<CommunityRatedWork[]> {
   const snap = await getDocs(query(collection(getFirebaseClient().db, 'workRatings'), orderBy('rankScore', 'desc'), limit(24)));
   const ranked = snap.docs.map((d) => ({ ...d.data(), workId: d.id } as RatingSummary))
     .filter((s) => isUuid(s.workId) && s.count > 0).sort(compareRatings);
-  const resolved = await Promise.allSettled(ranked.map(async (summary) => ({
-    ...await fetchMangaDetails(summary.workId), ratingSummary: summary,
-  })));
-  return resolved.flatMap((result) => result.status === 'fulfilled' && ['safe', 'suggestive'].includes(result.value.contentRating) ? [result.value] : []);
+  const works: CommunityRatedWork[] = [];
+  for (let start = 0; start < ranked.length && works.length < 5; start += 2) {
+    const resolved = await Promise.allSettled(ranked.slice(start, start + 2).map(async (summary) => ({
+      ...await fetchMangaDetails(summary.workId), ratingSummary: summary,
+    })));
+    works.push(...resolved.flatMap((result) => result.status === 'fulfilled' && ['safe', 'suggestive'].includes(result.value.contentRating) ? [result.value] : []));
+  }
+  return works.slice(0, 5);
 }
