@@ -44,6 +44,7 @@ import type {
   YomiMangaEntry,
   YomiReadingList,
 } from '@/lib/backup/kuroCodec';
+import { WorkRating } from '@/components/ratings/WorkRating';
 import { CommentsSection } from '@/components/comments/CommentsSection';
 
 function toCloudMangaEntry(work: MangaDexWork): YomiMangaEntry {
@@ -840,6 +841,8 @@ export default function ObraDetailsPage() {
           </div>
         )}
       </section>
+
+      <WorkRating workId={work.id} />
 
       <CommentsSection
         targetId={cleanMangaDexId(work.id)}

@@ -1,24 +1,51 @@
-name: Validate mobile PR
+name: Yomi quality
 on:
   pull_request:
   push:
     branches: [main, fix/mobile-reader-comments-chapters-20261115]
 permissions:
   contents: read
+concurrency:
+  group: yomi-quality-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   quality:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    env:
+      NEXT_PUBLIC_YOMI_EMULATORS: '1'
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID: demo-yomi-kuro
+      NEXT_PUBLIC_FIREBASE_API_KEY: test-key
+      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: localhost
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
       - run: npm ci
       - run: npm test
-      - run: npx tsc --noEmit
+      - run: npm run typecheck
       - run: npm run build
+      - name: Install browser validation tools
+        run: |
+          npm install --prefix "$RUNNER_TEMP/yomi-validation" --no-save --package-lock=false playwright@1.57.0 firebase-tools@14.25.1
+          node "$RUNNER_TEMP/yomi-validation/node_modules/playwright/cli.js" install --with-deps chromium webkit
+      - name: Browser regression tests with isolated Firebase emulators
+        run: |
+          export PLAYWRIGHT_MODULE="$RUNNER_TEMP/yomi-validation/node_modules/playwright/index.mjs"
+          "$RUNNER_TEMP/yomi-validation/node_modules/.bin/firebase" emulators:exec --only firestore,auth --project demo-yomi-kuro "node tests/mobile/check.mjs"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mobile-browser-results
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
   firestore:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -33,3 +60,37 @@ jobs:
           java-version: 21
       - run: npm --prefix tests/firestore ci
       - run: npx --yes firebase-tools@14.25.1 emulators:exec --only firestore --project demo-yomi-kuro "node tests/firestore/check.mjs"
+  release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [quality, firestore]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Publish validated web release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          tag="v$version"
+          if ! gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Yomi Web $tag" --notes-file "docs/releases/$tag.md"
+          fi
+      - name: Remove integrated task branches
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git for-each-ref --format='%(refname:strip=3)' --merged HEAD refs/remotes/origin | while IFS= read -r branch; do
+            case "$branch" in
+              codex/*|fix/mobile-reader-comments-chapters-20261115)
+                expected="$(git rev-parse "refs/remotes/origin/$branch")"
+                actual="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$branch" --jq .object.sha)"
+                if [ "$actual" = "$expected" ]; then
+                  gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/$branch"
+                fi
+                ;;
+            esac
+          done
