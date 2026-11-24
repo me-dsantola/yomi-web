@@ -11,6 +11,9 @@ concurrency:
 jobs:
   quality:
     runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.57.0-noble
+      options: --ipc=host
     timeout-minutes: 25
     env:
       YOMI_BROWSER_DEV: '1'
@@ -35,7 +38,7 @@ jobs:
       - name: Install browser validation tools
         run: |
           npm install --prefix "$RUNNER_TEMP/yomi-validation" --no-save --package-lock=false playwright@1.57.0 firebase-tools@14.25.1
-          node "$RUNNER_TEMP/yomi-validation/node_modules/playwright/cli.js" install --with-deps chromium webkit
+          node "$RUNNER_TEMP/yomi-validation/node_modules/playwright/cli.js" --version
       - name: Browser regression tests with isolated Firebase emulators
         run: |
           export PLAYWRIGHT_MODULE="$RUNNER_TEMP/yomi-validation/node_modules/playwright/index.mjs"
