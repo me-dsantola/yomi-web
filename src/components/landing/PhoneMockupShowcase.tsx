@@ -3,14 +3,10 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
-  Flame,
-  Sparkles,
   BookOpen,
-  Star,
   Clock,
   ChevronRight,
   Layers,
-  Award,
 } from "lucide-react";
 import { BlobatarCompanion } from "@/components/brand/BlobatarCompanion";
 
@@ -95,8 +91,8 @@ export function PhoneMockupShowcase() {
                 <div className="relative h-64 w-full overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-[#2A0E1B] via-[#130914] to-[#070709] p-3.5 flex flex-col justify-end">
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(255,42,85,0.35),transparent_60%)]" />
                   <div className="relative z-10 space-y-1.5">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[#FF2A55]/20 border border-[#FF2A55]/40 px-2 py-0.5 text-[10px] font-semibold text-[#FF2A55]">
-                      <Flame className="h-2.5 w-2.5" /> EM DESTAQUE • #1
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FF2A55]/20 border border-[#FF2A55]/40 px-2 py-0.5 text-[10px] font-semibold text-[#FF2A55]">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#FF2A55]" /> EM DESTAQUE • #1
                     </span>
                     <h4 className="font-display text-base font-bold text-white leading-tight">
                       Solo Leveling: Arise
@@ -202,8 +198,8 @@ export function PhoneMockupShowcase() {
 
                 <div className="rounded-xl border border-white/[0.07] bg-[#0E0E14] p-2.5 space-y-1.5">
                   <div className="flex items-center justify-between text-[10px]">
-                    <span className="flex items-center gap-1 font-medium text-white/85">
-                      <Award className="h-3 w-3 text-purple-400" /> Conquista Desbloqueada
+                    <span className="flex items-center gap-1.5 font-medium text-white/85">
+                      <span className="h-1.5 w-1.5 rounded-full bg-purple-400" /> Conquista Desbloqueada
                     </span>
                     <span className="text-purple-400">+250 XP</span>
                   </div>

@@ -37,7 +37,7 @@ export function CookieConsentBanner() {
   return (
     <aside
       aria-label="Aviso de privacidade e armazenamento local"
-      className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-50 rounded-2xl border border-white/12 bg-[#0E0E14]/95 p-4 backdrop-blur-xl shadow-[0_16px_48px_rgba(0,0,0,0.8)]"
+      className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom,0px))] md:bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-50 rounded-2xl border border-white/12 bg-[#0E0E14]/95 p-4 backdrop-blur-xl shadow-[0_16px_48px_rgba(0,0,0,0.8)]"
     >
       <div className="flex items-start gap-3">
         <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[var(--yomi-accent)]" />
@@ -56,12 +56,12 @@ export function CookieConsentBanner() {
             </button>
           </div>
           <p className="leading-relaxed text-white/60">
-            Usamos apenas armazenamento essencial para lembrar suas preferências de leitura e manter sua sessão ativa, sem anúncios ou rastreadores comerciais.{" "}
+            Usamos apenas armazenamento essencial para salvar suas preferências e sessão.{" "}
             <Link
               href="/privacidade"
               className="text-white underline decoration-white/30 underline-offset-2 hover:text-[var(--yomi-accent)]"
             >
-              Política de Privacidade
+              Privacidade
             </Link>
             .
           </p>

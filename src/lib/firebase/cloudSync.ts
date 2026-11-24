@@ -11,6 +11,7 @@ import {
   decodeKuroBackup,
   encodeKuroBackup,
   mergeHistoryIntoPayload,
+  stripEphemeralCacheForCloud,
   summarizeBackup,
   type WebReaderProgressUpdate,
   type YomiBackupV4,
@@ -520,11 +521,11 @@ export async function toggleCloudFavorite(
       nextState = true;
     }
 
-    const nextBackup: YomiBackupV4 = {
+    const nextBackup = stripEphemeralCacheForCloud({
       ...decoded,
       version: decoded.version ?? CURRENT_BACKUP_VERSION,
       favorites: nextFavorites,
-    };
+    });
 
     const nextPayload = encodeKuroBackup(nextBackup, !wasRawJson);
     const summary = summarizeBackup(nextBackup);
@@ -576,14 +577,14 @@ export async function saveCloudReadingLists(
       userEmail
     );
 
-    const nextBackup: YomiBackupV4 = {
+    const nextBackup = stripEphemeralCacheForCloud({
       ...decoded,
       version: decoded.version ?? CURRENT_BACKUP_VERSION,
       settings: {
         ...(decoded.settings ?? {}),
         user_reading_lists: readingLists,
       },
-    };
+    });
 
     const nextPayload = encodeKuroBackup(nextBackup, !wasRawJson);
     const summary = summarizeBackup(nextBackup);
@@ -642,11 +643,11 @@ export async function updateCloudUserProfile(
       isConfigured: true,
     };
 
-    const nextBackup: YomiBackupV4 = {
+    const nextBackup = stripEphemeralCacheForCloud({
       ...decoded,
       version: decoded.version ?? CURRENT_BACKUP_VERSION,
       profile: nextProfile,
-    };
+    });
 
     const nextPayload = encodeKuroBackup(nextBackup, !wasRawJson);
     const summary = summarizeBackup(nextBackup);
@@ -716,13 +717,13 @@ export async function toggleChapterReadInCloud(
         ...(decoded.history ?? {}),
       };
       nextHistory[`read_${chapter.id}`] = false;
-      const nextBackup: YomiBackupV4 = {
+      const nextBackup = stripEphemeralCacheForCloud({
         ...decoded,
         version: decoded.version ?? CURRENT_BACKUP_VERSION,
         history: nextHistory,
-      };
+      });
       nextPayload = encodeKuroBackup(nextBackup, !wasRawJson);
-      historyCount = Object.keys(nextHistory).length;
+      historyCount = Object.keys(nextBackup.history ?? {}).length;
     }
 
     const baseFields = docExists
@@ -761,8 +762,10 @@ export async function importKuroBackupToCloud(
   userDisplayName: string | null,
   rawKuroInput: string
 ): Promise<void> {
-  const decoded = decodeKuroBackup(rawKuroInput);
+  const decoded = stripEphemeralCacheForCloud(decodeKuroBackup(rawKuroInput));
   const summary = summarizeBackup(decoded);
+  const wasRawJson = rawKuroInput.trim().startsWith('{');
+  const compactPayload = encodeKuroBackup(decoded, !wasRawJson);
   const { db } = getFirebaseClient();
   const ref = doc(db, 'users', uid);
 
@@ -785,7 +788,7 @@ export async function importKuroBackupToCloud(
         uid,
         userEmail,
         userDisplayName,
-        payload: rawKuroInput.trim(),
+        payload: compactPayload,
         profile: decoded.profile ?? {},
         favoritesCount: summary.favoritesCount,
         historyCount: summary.historyCount,

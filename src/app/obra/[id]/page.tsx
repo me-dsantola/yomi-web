@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  AlertCircle,
   ArrowLeft,
   ArrowUpDown,
   BookOpen,
@@ -13,17 +14,24 @@ import {
   ExternalLink,
   FolderHeart,
   Heart,
-  Lock,
+  Languages,
   Plus,
+  RefreshCw,
+  Search,
   X,
 } from 'lucide-react';
 import {
   cleanMangaDexId,
-  fetchMangaChapters,
+  clearMangaChaptersCache,
+  fetchMangaChaptersWithMeta,
   fetchMangaDetails,
   resolveMangaEntryCoverUrl,
 } from '@/lib/mangadex/api';
-import type { MangaDexChapter, MangaDexWork } from '@/lib/mangadex/types';
+import type {
+  MangaDexChapter,
+  MangaDexChaptersResult,
+  MangaDexWork,
+} from '@/lib/mangadex/types';
 import { useYomiAuth } from '@/components/providers/AppProviders';
 import {
   fetchUserCloudDoc,
@@ -62,6 +70,9 @@ export default function ObraDetailsPage() {
   const { user, openAuthModal } = useYomiAuth();
 
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [includeSpanishFallback, setIncludeSpanishFallback] = useState(true);
+  const [chapterQuery, setChapterQuery] = useState('');
+  const [visibleCount, setVisibleCount] = useState(120);
   const [titleParam, setTitleParam] = useState('');
   const [favBusy, setFavBusy] = useState(false);
   const [collectionModalOpen, setCollectionModalOpen] = useState(false);
@@ -151,14 +162,60 @@ export default function ObraDetailsPage() {
 
   const resolvedWorkId = work?.id || cleanParamId || mangaId;
 
-  const { data: chapters = [], isLoading: loadingChapters } = useQuery({
-    queryKey: ['mangadex-chapters', resolvedWorkId, sortDirection],
-    queryFn: () => fetchMangaChapters(resolvedWorkId, sortDirection),
+  const {
+    data: chaptersMeta,
+    isLoading: loadingChapters,
+    isError: isChaptersError,
+    error: chaptersError,
+    refetch: refetchChapters,
+  } = useQuery<MangaDexChaptersResult>({
+    queryKey: [
+      'mangadex-chapters',
+      resolvedWorkId,
+      includeSpanishFallback ? 'with-es' : 'no-es',
+    ],
+    queryFn: () =>
+      fetchMangaChaptersWithMeta(resolvedWorkId, {
+        direction: 'asc',
+        includeSpanishFallback,
+      }),
     enabled: Boolean(resolvedWorkId),
+    retry: 1,
   });
 
-  const historyMap = cloudDoc?.backup?.history ?? {};
-  const firstChapter = chapters[0];
+  const ascChapters = chaptersMeta?.chapters ?? [];
+  const firstChapter = ascChapters[0];
+
+  useEffect(() => {
+    setVisibleCount(120);
+  }, [resolvedWorkId, sortDirection, chapterQuery, includeSpanishFallback]);
+
+  const sortedChapters = useMemo(() => {
+    if (sortDirection === 'asc') return ascChapters;
+    const numbered = ascChapters.filter((c) => !c.isSpecial).reverse();
+    const specials = ascChapters.filter((c) => c.isSpecial);
+    return [...numbered, ...specials];
+  }, [ascChapters, sortDirection]);
+
+  const filteredChapters = useMemo(() => {
+    const q = chapterQuery.trim().toLowerCase();
+    if (!q) return sortedChapters;
+    return sortedChapters.filter(
+      (ch) =>
+        ch.chapterNumber.toLowerCase().includes(q) ||
+        ch.title.toLowerCase().includes(q) ||
+        ch.scanlationGroup.toLowerCase().includes(q)
+    );
+  }, [sortedChapters, chapterQuery]);
+
+  const visibleChapters = useMemo(
+    () => filteredChapters.slice(0, visibleCount),
+    [filteredChapters, visibleCount]
+  );
+
+  const hasMoreChapters = filteredChapters.length > visibleChapters.length;
+  const chapters = ascChapters;
+  const historyMap = useMemo(() => cloudDoc?.backup?.history ?? {}, [cloudDoc]);
 
   // Find last read chapter for this work
   const lastReadChapter = useMemo(() => {
@@ -489,9 +546,11 @@ export default function ObraDetailsPage() {
                     className="inline-flex items-center gap-2 rounded-full bg-[var(--yomi-accent)] px-6 py-3 text-xs sm:text-sm font-semibold text-white shadow-[0_0_25px_var(--yomi-accent-glow)] transition hover:brightness-110"
                   >
                     <BookOpen className="h-4 w-4" />
-                    {!user
-                      ? `Ler Prévia — Cap. ${firstChapter.chapterNumber}`
-                      : `Ler Cap. ${firstChapter.chapterNumber} (${firstChapter.language})`}
+                    {`Ler ${
+                      firstChapter.isSpecial
+                        ? firstChapter.chapterNumber
+                        : `Cap. ${firstChapter.chapterNumber}`
+                    } (${firstChapter.language})`}
                   </Link>
                 )
               )}
@@ -526,59 +585,91 @@ export default function ObraDetailsPage() {
                   ? `Coleções (${workCollectionCount})`
                   : 'Adicionar à Coleção'}
               </button>
-
-              {!user && (
-                <button
-                  type="button"
-                  onClick={() => openAuthModal('login')}
-                  className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.06] px-5 py-3 text-xs sm:text-sm font-semibold text-white transition hover:bg-white/15"
-                >
-                  <Lock className="h-3.5 w-3.5 text-[var(--yomi-accent)]" />
-                  Entrar para ler completo
-                </button>
-              )}
             </div>
           </div>
         </div>
       </div>
 
       {/* Chapter List */}
-      <section className="rounded-3xl border border-white/10 bg-[#0E0E14] p-6 sm:p-8 space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
-          <h2 className="font-display text-xl font-bold text-white">
-            Capítulos ({chapters.length})
-          </h2>
+      <section className="rounded-3xl border border-white/10 bg-[#0E0E14] p-6 sm:p-8 space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.08] pb-4">
+          <div className="flex items-center gap-3">
+            <h2 className="font-display text-xl font-bold text-white">
+              Capítulos (
+              {filteredChapters.length !== chapters.length
+                ? `${filteredChapters.length}/${chapters.length}`
+                : chapters.length}
+              )
+            </h2>
+          </div>
 
-          <button
-            type="button"
-            onClick={() =>
-              setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'))
-            }
-            className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/[0.04] px-4 py-2 text-xs font-medium text-white hover:bg-white/[0.08]"
-          >
-            <ArrowUpDown className="h-3.5 w-3.5 text-[var(--yomi-accent)]" />
-            Ordem: {sortDirection === 'asc' ? 'Cap. 1 → Atual' : 'Mais Recentes'}
-          </button>
-        </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {chapters.length > 8 && (
+              <div className="relative flex-1 sm:flex-initial min-w-[140px]">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/40" />
+                <input
+                  type="search"
+                  value={chapterQuery}
+                  onChange={(e) => setChapterQuery(e.target.value)}
+                  placeholder="Filtrar cap..."
+                  aria-label="Filtrar capítulos"
+                  className="w-full sm:w-44 rounded-full border border-white/12 bg-black/40 py-2 sm:py-1.5 pl-8 pr-3 text-base sm:text-xs text-white placeholder:text-white/35 focus:border-[var(--yomi-accent)] focus:outline-none"
+                />
+              </div>
+            )}
 
-        {!user && chapters.length > 0 && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs">
-            <div className="flex items-center gap-2.5 text-white/75">
-              <Lock className="h-4 w-4 shrink-0 text-[var(--yomi-accent)]" />
-              <span>
-                Visitantes têm acesso a uma prévia de 3 páginas por capítulo.
-                Crie ou conecte sua conta para liberar a leitura completa.
-              </span>
-            </div>
             <button
               type="button"
-              onClick={() => openAuthModal('login')}
-              className="shrink-0 rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-black transition hover:bg-white/90"
+              onClick={() => setIncludeSpanishFallback((v) => !v)}
+              title="Permitir que capítulos em Espanhol preencham lacunas ausentes em PT-BR e EN"
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-medium transition ${
+                includeSpanishFallback
+                  ? 'border-amber-500/30 bg-amber-500/10 text-amber-200 hover:bg-amber-500/15'
+                  : 'border-white/12 bg-white/[0.04] text-white/60 hover:text-white'
+              }`}
             >
-              Entrar / Criar Conta
+              <Languages className="h-3.5 w-3.5" />
+              <span>ES lacunas: {includeSpanishFallback ? 'Ativo' : 'Oculto'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'))
+              }
+              className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/[0.04] px-4 py-2 text-xs font-medium text-white hover:bg-white/[0.08]"
+            >
+              <ArrowUpDown className="h-3.5 w-3.5 text-[var(--yomi-accent)]" />
+              Ordem: {sortDirection === 'asc' ? 'Cap. 1 → Atual' : 'Mais Recentes'}
             </button>
           </div>
-        )}
+        </div>
+
+        {chaptersMeta &&
+          (chaptersMeta.hasLanguageFallback ||
+            chaptersMeta.partialFailureLanguages.length > 0) && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/[0.08] bg-white/[0.025] px-4 py-2.5 text-xs text-white/75">
+              <div className="flex items-center gap-2">
+                <Languages className="h-3.5 w-3.5 shrink-0 text-[var(--yomi-accent)]" />
+                <span>
+                  Idiomas combinados ({chaptersMeta.languagesUsed.join(' • ')})
+                  para preencher capítulos ausentes na tradução principal.
+                </span>
+              </div>
+              {chaptersMeta.partialFailureLanguages.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearMangaChaptersCache(resolvedWorkId);
+                    refetchChapters();
+                  }}
+                  className="text-[11px] font-semibold text-amber-300 underline-offset-2 hover:underline"
+                >
+                  Recarregar ({chaptersMeta.partialFailureLanguages.join(', ')})
+                </button>
+              )}
+            </div>
+          )}
 
         {loadingChapters ? (
           <div className="space-y-2.5">
@@ -589,11 +680,36 @@ export default function ObraDetailsPage() {
               />
             ))}
           </div>
+        ) : isChaptersError ? (
+          <div className="rounded-2xl border border-rose-500/30 bg-rose-500/[0.08] py-8 px-4 text-center space-y-3">
+            <AlertCircle className="mx-auto h-7 w-7 text-rose-400" />
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-white">
+                Falha ao carregar os capítulos
+              </p>
+              <p className="text-xs text-white/65">
+                {chaptersError instanceof Error
+                  ? chaptersError.message
+                  : 'A fonte externa não respondeu a tempo. Tente novamente em instantes.'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                clearMangaChaptersCache(resolvedWorkId);
+                refetchChapters();
+              }}
+              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--yomi-accent)] px-5 py-2 text-xs font-semibold text-white transition hover:brightness-110"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Tentar novamente
+            </button>
+          </div>
         ) : chapters.length === 0 ? (
           <div className="py-10 px-4 text-center space-y-4">
             <p className="text-sm font-medium text-white/80">
-              Esta obra possui capítulos licenciados exclusivamente em
-              plataformas externas.
+              Esta obra não possui capítulos legíveis disponíveis nos idiomas
+              selecionados ou está licenciada em plataformas externas.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
               <a
@@ -613,80 +729,120 @@ export default function ObraDetailsPage() {
               </Link>
             </div>
           </div>
+        ) : filteredChapters.length === 0 ? (
+          <div className="py-8 px-4 text-center space-y-2">
+            <p className="text-sm font-medium text-white/75">
+              Nenhum capítulo encontrado para &ldquo;{chapterQuery}&rdquo;.
+            </p>
+            <button
+              type="button"
+              onClick={() => setChapterQuery('')}
+              className="text-xs font-semibold text-[var(--yomi-accent)] hover:underline"
+            >
+              Limpar filtro
+            </button>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-            {chapters.map((ch) => {
-              const isRead = historyMap[`read_${ch.id}`] === true;
-              return (
-                <Link
-                  key={ch.id}
-                  href={`/ler/${ch.id}`}
-                  className={`flex items-center justify-between gap-3 rounded-2xl border p-3.5 transition ${
-                    isRead
-                      ? 'border-emerald-500/25 bg-emerald-500/[0.04] text-white/65'
-                      : 'border-white/[0.07] bg-black/30 hover:border-[var(--yomi-accent)]/50 hover:bg-white/[0.04] text-white'
-                  }`}
-                >
-                  <div className="min-w-0 space-y-0.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-display text-sm font-bold">
-                        Cap. {ch.chapterNumber}
-                      </span>
-                      <span
-                        className={`rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold ${
-                          ch.language === 'PT-BR'
-                            ? 'bg-emerald-500/20 text-emerald-300'
-                            : 'bg-white/10 text-white/70'
-                        }`}
-                      >
-                        {ch.language}
-                      </span>
-                      {isRead && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-400">
-                          <CheckCircle2 className="h-3 w-3" /> Lido
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+              {visibleChapters.map((ch) => {
+                const isRead = historyMap[`read_${ch.id}`] === true;
+                const displayNumber = ch.isSpecial
+                  ? ch.chapterNumber
+                  : `Cap. ${ch.chapterNumber}`;
+                return (
+                  <Link
+                    key={ch.id}
+                    href={`/ler/${ch.id}`}
+                    className={`flex items-center justify-between gap-3 rounded-2xl border p-3.5 transition ${
+                      isRead
+                        ? 'border-emerald-500/25 bg-emerald-500/[0.04] text-white/65'
+                        : 'border-white/[0.07] bg-black/30 hover:border-[var(--yomi-accent)]/50 hover:bg-white/[0.04] text-white'
+                    }`}
+                  >
+                    <div className="min-w-0 space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-display text-sm font-bold">
+                          {displayNumber}
                         </span>
-                      )}
+                        <span
+                          className={`rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold ${
+                            ch.language === 'PT-BR'
+                              ? 'bg-emerald-500/20 text-emerald-300'
+                              : ch.language === 'ES'
+                                ? 'bg-amber-500/20 text-amber-200'
+                                : 'bg-white/10 text-white/70'
+                          }`}
+                        >
+                          {ch.language}
+                        </span>
+                        {isRead && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-400">
+                            <CheckCircle2 className="h-3 w-3" /> Lido
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-white/50 truncate">
+                        {ch.title || `Scan: ${ch.scanlationGroup}`}
+                      </p>
                     </div>
-                    <p className="text-xs text-white/50 truncate">
-                      {ch.title || `Scan: ${ch.scanlationGroup}`}
-                    </p>
-                  </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    {user && (
-                      <button
-                        type="button"
-                        disabled={chapterBusyId === ch.id}
-                        onClick={(e) => handleToggleChapterRead(e, ch, !isRead)}
-                        title={
-                          isRead ? 'Desmarcar como lido' : 'Marcar como lido'
-                        }
-                        aria-label={
-                          isRead ? 'Desmarcar como lido' : 'Marcar como lido'
-                        }
-                        className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition ${
-                          isRead
-                            ? 'border-emerald-500/40 bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30'
-                            : 'border-white/10 bg-white/[0.04] text-white/55 hover:border-white/30 hover:text-white'
-                        }`}
-                      >
-                        <Check className="h-3.5 w-3.5" />
-                      </button>
-                    )}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {user && (
+                        <button
+                          type="button"
+                          disabled={chapterBusyId === ch.id}
+                          onClick={(e) => handleToggleChapterRead(e, ch, !isRead)}
+                          title={
+                            isRead ? 'Desmarcar como lido' : 'Marcar como lido'
+                          }
+                          aria-label={
+                            isRead ? 'Desmarcar como lido' : 'Marcar como lido'
+                          }
+                          className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition ${
+                            isRead
+                              ? 'border-emerald-500/40 bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30'
+                              : 'border-white/10 bg-white/[0.04] text-white/55 hover:border-white/30 hover:text-white'
+                          }`}
+                        >
+                          <Check className="h-3.5 w-3.5" />
+                        </button>
+                      )}
 
-                    <span className="rounded-full bg-white/5 px-3 py-1.5 text-xs font-medium text-white/80">
-                      {!user ? 'Prévia →' : 'Ler →'}
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
+                      <span className="rounded-full bg-white/5 px-3 py-1.5 text-xs font-medium text-white/80">
+                        Ler →
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+
+            {hasMoreChapters && (
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setVisibleCount((prev) => prev + 120)}
+                  className="rounded-full border border-white/15 bg-white/[0.05] px-5 py-2 text-xs font-semibold text-white transition hover:border-white/30 hover:bg-white/[0.1]"
+                >
+                  Mostrar mais capítulos (restam{' '}
+                  {filteredChapters.length - visibleChapters.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVisibleCount(filteredChapters.length)}
+                  className="rounded-full border border-white/10 bg-transparent px-4 py-2 text-xs font-medium text-white/65 transition hover:text-white"
+                >
+                  Mostrar todos ({filteredChapters.length})
+                </button>
+              </div>
+            )}
           </div>
         )}
       </section>
 
       <CommentsSection
-        targetId={work.id}
+        targetId={cleanMangaDexId(work.id)}
         targetType="manga"
         title="Comentários da Obra"
       />
@@ -699,21 +855,22 @@ export default function ObraDetailsPage() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-3xl border border-white/12 bg-[#0E0E14] p-6 space-y-5 shadow-2xl"
+            className="w-full max-w-md max-h-[90dvh] overflow-y-auto overscroll-contain rounded-3xl border border-white/12 bg-[#0E0E14] p-5 sm:p-6 space-y-5 shadow-2xl"
           >
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
                 <h2 className="font-display text-lg font-bold text-white">
                   Salvar em Coleções
                 </h2>
-                <p className="text-xs text-white/55 truncate max-w-[280px]">
+                <p className="text-xs text-white/55 truncate">
                   {work.title}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setCollectionModalOpen(false)}
-                className="rounded-full p-1.5 text-white/50 hover:bg-white/10 hover:text-white"
+                aria-label="Fechar modal de coleções"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/50 hover:bg-white/10 hover:text-white"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -777,12 +934,12 @@ export default function ObraDetailsPage() {
                 value={newCollectionName}
                 onChange={(e) => setNewCollectionName(e.target.value)}
                 placeholder="Nova coleção..."
-                className="flex-1 rounded-full border border-white/12 bg-black/40 px-4 py-2 text-xs text-white placeholder:text-white/35 focus:border-[var(--yomi-accent)] focus:outline-none"
+                className="flex-1 min-w-0 rounded-full border border-white/12 bg-black/40 px-4 py-2 text-base sm:text-xs text-white placeholder:text-white/35 focus:border-[var(--yomi-accent)] focus:outline-none"
               />
               <button
                 type="submit"
                 disabled={collectionBusy || !newCollectionName.trim()}
-                className="inline-flex items-center gap-1 rounded-full bg-[var(--yomi-accent)] px-4 py-2 text-xs font-semibold text-white hover:brightness-110 disabled:opacity-50"
+                className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--yomi-accent)] px-4 py-2.5 sm:py-2 text-xs font-semibold text-white hover:brightness-110 disabled:opacity-50"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Criar

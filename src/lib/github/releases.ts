@@ -64,15 +64,6 @@ export interface LatestRelease {
   isFallback?: boolean;
 }
 
-export interface PreviousReleaseSummary {
-  version: string;
-  tagName: string;
-  publishedAt: string;
-  htmlUrl: string;
-  notes: string;
-  apks: Array<{ abi: Abi; url: string; sizeBytes: number; fileName: string }>;
-}
-
 export interface YomiReleaseAsset {
   abi: Abi;
   name: string;
@@ -112,7 +103,7 @@ const ABI_DESCRIPTIONS: Record<Abi, { description: string; badge?: string }> = {
 function getGitHubHeaders(): HeadersInit {
   const headers: Record<string, string> = {
     Accept: 'application/vnd.github+json',
-    'User-Agent': 'YOMI-Web-Portal/1.2.9',
+    'User-Agent': 'YOMI-Web/1.2.11',
   };
   if (process.env.GITHUB_TOKEN) {
     headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
@@ -120,10 +111,29 @@ function getGitHubHeaders(): HeadersInit {
   return headers;
 }
 
+export interface ReleaseFetchOptions {
+  noStore?: boolean;
+}
+
+function buildFetchInit(
+  options?: ReleaseFetchOptions,
+  extraHeaders?: HeadersInit
+): RequestInit {
+  const init: RequestInit & { next?: { revalidate: number } } = extraHeaders
+    ? { headers: extraHeaders }
+    : {};
+  if (options?.noStore) {
+    init.cache = 'no-store';
+  } else {
+    init.next = { revalidate: 60 };
+  }
+  return init;
+}
+
 const FALLBACK_SIZES: Record<Abi, number> = {
-  'arm64-v8a': 56098816,
-  'armeabi-v7a': 53687091,
-  x86_64: 57671680,
+  'arm64-v8a': 56269081,
+  'armeabi-v7a': 53966965,
+  x86_64: 57826077,
 };
 
 /**
@@ -132,12 +142,13 @@ const FALLBACK_SIZES: Record<Abi, number> = {
  * Nunca cria botão para APK universal inexistente.
  */
 export async function getLatestRelease(
-  customFetch: typeof fetch = fetch
+  customFetch: typeof fetch = fetch,
+  options?: ReleaseFetchOptions
 ): Promise<LatestRelease> {
-  const res = await customFetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
-    headers: getGitHubHeaders(),
-    next: { revalidate: 60 },
-  } as RequestInit);
+  const res = await customFetch(
+    `https://api.github.com/repos/${REPO}/releases/latest`,
+    buildFetchInit(options, getGitHubHeaders())
+  );
 
   if (!res.ok) {
     throw new Error(`GitHub ${res.status}`);
@@ -149,9 +160,10 @@ export async function getLatestRelease(
   const manifestAsset = release.assets.find((a) => a.name === 'release.json');
   if (manifestAsset) {
     try {
-      const m = await customFetch(manifestAsset.browser_download_url, {
-        next: { revalidate: 60 },
-      } as RequestInit);
+      const m = await customFetch(
+        manifestAsset.browser_download_url,
+        buildFetchInit(options)
+      );
       if (m.ok) {
         const parsed = ManifestSchema.safeParse(await m.json());
         manifest = parsed.success ? parsed.data : null;
@@ -166,9 +178,10 @@ export async function getLatestRelease(
     const shaAsset = release.assets.find((a) => a.name === 'SHA256SUMS.txt');
     if (shaAsset) {
       try {
-        const s = await customFetch(shaAsset.browser_download_url, {
-          next: { revalidate: 60 },
-        } as RequestInit);
+        const s = await customFetch(
+          shaAsset.browser_download_url,
+          buildFetchInit(options)
+        );
         if (s.ok) {
           const text = await s.text();
           for (const line of text.split(/\r?\n/)) {
@@ -223,13 +236,12 @@ export async function getLatestRelease(
  * no GitHub CDN (`/releases/latest/download/release.json`), evitando rate-limit da API REST.
  */
 export async function getLatestReleaseFromDirectManifest(
-  customFetch: typeof fetch = fetch
+  customFetch: typeof fetch = fetch,
+  options?: ReleaseFetchOptions
 ): Promise<LatestRelease> {
   const res = await customFetch(
     `https://github.com/${REPO}/releases/latest/download/release.json`,
-    {
-      next: { revalidate: 60 },
-    } as RequestInit
+    buildFetchInit(options)
   );
 
   if (!res.ok) {
@@ -244,7 +256,7 @@ export async function getLatestReleaseFromDirectManifest(
   const publishedAt =
     parsedDate && !Number.isNaN(parsedDate.getTime())
       ? parsedDate.toISOString()
-      : '2026-11-15T00:00:00Z';
+      : '2026-11-16T00:21:43Z';
 
   const apks: ApkInfo[] = ABIS.flatMap((abi) => {
     const entry = manifest.apks.find((x) => x.abi === abi);
@@ -267,7 +279,7 @@ export async function getLatestReleaseFromDirectManifest(
     version: cleanVersion,
     build: manifest.build,
     publishedAt,
-    notes: `### YOMI v${cleanVersion}\nVersão oficial mais recente publicada no GitHub Releases. Confira os hashes SHA-256 verificados abaixo.`,
+    notes: `### YOMI v${cleanVersion}\nVersão mais recente publicada.`,
     htmlUrl: tagUrl,
     certificateSha256: manifest.certificateSha256,
     apks,
@@ -281,50 +293,51 @@ export async function getLatestReleaseFromDirectManifest(
  * no CDN e, só em último caso, retorna o fallback estático funcional.
  */
 export async function getLatestReleaseSafe(
-  customFetch: typeof fetch = fetch
+  customFetch: typeof fetch = fetch,
+  options?: ReleaseFetchOptions
 ): Promise<LatestRelease> {
   try {
-    return await getLatestRelease(customFetch);
+    return await getLatestRelease(customFetch, options);
   } catch {
     try {
-      return await getLatestReleaseFromDirectManifest(customFetch);
+      return await getLatestReleaseFromDirectManifest(customFetch, options);
     } catch {
       return {
-        version: '1.2.9',
-        build: 17,
-        publishedAt: '2026-11-15T06:00:00Z',
+        version: '1.2.11',
+        build: 19,
+        publishedAt: '2026-11-16T00:21:43Z',
         notes:
-          '### YOMI Estável v1.2.9\nSincronização em nuvem anti-conflito por timestamp, compactação automática para o Firestore e login com e-mail e senha.',
+          '### YOMI v1.2.11\nRefinamento visual e responsividade da tela de detalhes no Android.',
         htmlUrl: FALLBACK_URL,
         apks: [
           {
             abi: 'arm64-v8a',
-            fileName: 'YOMI-1.2.9-arm64-v8a.apk',
-            url: `https://github.com/${REPO}/releases/download/v1.2.9/YOMI-1.2.9-arm64-v8a.apk`,
-            sizeBytes: 56098816,
+            fileName: 'YOMI-1.2.11-arm64-v8a.apk',
+            url: `https://github.com/${REPO}/releases/download/v1.2.11/YOMI-1.2.11-arm64-v8a.apk`,
+            sizeBytes: FALLBACK_SIZES['arm64-v8a'],
             description: ABI_DESCRIPTIONS['arm64-v8a'].description,
             badge: ABI_DESCRIPTIONS['arm64-v8a'].badge,
           },
           {
             abi: 'armeabi-v7a',
-            fileName: 'YOMI-1.2.9-armeabi-v7a.apk',
-            url: `https://github.com/${REPO}/releases/download/v1.2.9/YOMI-1.2.9-armeabi-v7a.apk`,
-            sizeBytes: 53687091,
+            fileName: 'YOMI-1.2.11-armeabi-v7a.apk',
+            url: `https://github.com/${REPO}/releases/download/v1.2.11/YOMI-1.2.11-armeabi-v7a.apk`,
+            sizeBytes: FALLBACK_SIZES['armeabi-v7a'],
             description: ABI_DESCRIPTIONS['armeabi-v7a'].description,
           },
           {
             abi: 'x86_64',
-            fileName: 'YOMI-1.2.9-x86_64.apk',
-            url: `https://github.com/${REPO}/releases/download/v1.2.9/YOMI-1.2.9-x86_64.apk`,
-            sizeBytes: 57671680,
+            fileName: 'YOMI-1.2.11-x86_64.apk',
+            url: `https://github.com/${REPO}/releases/download/v1.2.11/YOMI-1.2.11-x86_64.apk`,
+            sizeBytes: FALLBACK_SIZES.x86_64,
             description: ABI_DESCRIPTIONS.x86_64.description,
           },
         ],
         recommended: {
           abi: 'arm64-v8a',
-          fileName: 'YOMI-1.2.9-arm64-v8a.apk',
+          fileName: 'YOMI-1.2.11-arm64-v8a.apk',
           url: FALLBACK_URL,
-          sizeBytes: 56098816,
+          sizeBytes: FALLBACK_SIZES['arm64-v8a'],
           description: ABI_DESCRIPTIONS['arm64-v8a'].description,
           badge: ABI_DESCRIPTIONS['arm64-v8a'].badge,
         },
@@ -352,7 +365,7 @@ export function mapLatestToYomiReleaseInfo(latest: LatestRelease): YomiReleaseIn
     version: latest.version,
     tagName: `v${latest.version.replace(/^v/, '')}`,
     name: `YOMI v${latest.version.replace(/^v/, '')}`,
-    build: latest.build ?? 17,
+    build: latest.build ?? 19,
     publishedAt: latest.publishedAt,
     htmlUrl: latest.htmlUrl,
     bodyMarkdown: latest.notes,
@@ -362,87 +375,9 @@ export function mapLatestToYomiReleaseInfo(latest: LatestRelease): YomiReleaseIn
 }
 
 export async function fetchLatestYomiRelease(
-  customFetch: typeof fetch = fetch
+  customFetch: typeof fetch = fetch,
+  options?: ReleaseFetchOptions
 ): Promise<YomiReleaseInfo> {
-  const latest = await getLatestReleaseSafe(customFetch);
+  const latest = await getLatestReleaseSafe(customFetch, options);
   return mapLatestToYomiReleaseInfo(latest);
-}
-
-/**
- * Busca o histórico das últimas releases estáveis (ignorando drafts e prereleases).
- */
-export async function getPreviousReleases(
-  customFetch: typeof fetch = fetch
-): Promise<PreviousReleaseSummary[]> {
-  try {
-    const res = await customFetch(
-      `https://api.github.com/repos/${REPO}/releases?per_page=10`,
-      {
-        headers: getGitHubHeaders(),
-        next: { revalidate: 60 },
-      } as RequestInit
-    );
-    if (!res.ok) return [];
-    const rawList = await res.json();
-    if (!Array.isArray(rawList)) return [];
-
-    const parsedList = rawList
-      .map((item) => ReleaseSchema.safeParse(item))
-      .filter((r): r is { success: true; data: z.infer<typeof ReleaseSchema> } => r.success)
-      .map((r) => r.data)
-      .filter((r) => !r.draft && !r.prerelease);
-
-    return parsedList.slice(1).map((rel) => ({
-      version: rel.tag_name.replace(/^v/, ''),
-      tagName: rel.tag_name,
-      publishedAt: rel.published_at,
-      htmlUrl: rel.html_url,
-      notes: rel.body ?? '',
-      apks: ABIS.flatMap((abi) => {
-        const asset = rel.assets.find((a) => a.name.endsWith(`-${abi}.apk`));
-        if (!asset) return [];
-        return [
-          {
-            abi,
-            url: asset.browser_download_url,
-            sizeBytes: asset.size,
-            fileName: asset.name,
-          },
-        ];
-      }),
-    }));
-  } catch {
-    return [];
-  }
-}
-
-export async function fetchYomiReleaseHistory(
-  limit = 5,
-  customFetch: typeof fetch = fetch
-): Promise<YomiReleaseInfo[]> {
-  const prev = await getPreviousReleases(customFetch);
-  return prev.slice(0, limit).map((item) => {
-    const assets: Partial<Record<Abi, YomiReleaseAsset>> = {};
-    for (const apk of item.apks) {
-      assets[apk.abi] = {
-        abi: apk.abi,
-        name: apk.fileName,
-        downloadUrl: apk.url,
-        sizeBytes: apk.sizeBytes,
-        sizeFormatted: formatBytes(apk.sizeBytes),
-        sha256: null,
-      };
-    }
-    return {
-      version: item.version,
-      tagName: item.tagName,
-      name: `YOMI ${item.tagName}`,
-      build: 0,
-      publishedAt: item.publishedAt,
-      htmlUrl: item.htmlUrl,
-      bodyMarkdown: item.notes,
-      isFallback: false,
-      assets,
-    };
-  });
 }

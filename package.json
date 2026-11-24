@@ -1,15 +1,16 @@
 {
   "name": "yomi-web",
-  "version": "1.2.8",
+  "version": "1.2.14",
   "private": true,
-  "description": "Portal Web Oficial & Companion do aplicativo YOMI — Leitor minimalista de mangás, manhwas e webtoons para Android.",
+  "description": "Site oficial do leitor YOMI para Android e Web.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-yomi-kuro \"node tests/firestore/check.mjs\""
   },
   "dependencies": {
     "@tanstack/react-query": "^5.66.0",

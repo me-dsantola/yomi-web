@@ -486,6 +486,36 @@ export function buildKuroFilename(date: Date = new Date()): string {
 }
 
 /**
+ * Remove caches efêmeros de capítulos e limita históricos extensos antes de
+ * enviar para a nuvem, espelhando `BackupCodec.stripEphemeralCacheForCloud` do app Flutter.
+ */
+export function stripEphemeralCacheForCloud(data: YomiBackupV4): YomiBackupV4 {
+  const result: YomiBackupV4 = { ...data };
+  if (!isPlainObject(data.history)) {
+    return result;
+  }
+
+  const cleanHistory: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(data.history)) {
+    if (key.startsWith('chapters_') && !key.startsWith('chapters_count_')) {
+      continue;
+    }
+    if (key === 'recent_reading_list' && Array.isArray(value)) {
+      cleanHistory[key] = value.slice(0, 30);
+      continue;
+    }
+    if (key === 'reading_events_log' && Array.isArray(value)) {
+      cleanHistory[key] = value.length > 150 ? value.slice(-150) : [...value];
+      continue;
+    }
+    cleanHistory[key] = value;
+  }
+
+  result.history = cleanHistory;
+  return result;
+}
+
+/**
  * Mescla o progresso de leitura do Quick Reader Web dentro do `payload` existente,
  * preservando TODAS as chaves desconhecidas, favoritos, configurações e perfil.
  */
@@ -529,11 +559,11 @@ export function mergeHistoryIntoPayload(
 
   existingHistory.recent_reading_list = nextRecent;
 
-  const nextBackup: YomiBackupV4 = {
+  const nextBackup = stripEphemeralCacheForCloud({
     ...decoded,
     version: decoded.version ?? CURRENT_BACKUP_VERSION,
     history: existingHistory,
-  };
+  });
 
   // Mantém o mesmo formato (JSON puro se começava com '{', caso contrário Base64)
   const wasRawJson = rawPayloadString.trim().startsWith('{');
@@ -541,8 +571,9 @@ export function mergeHistoryIntoPayload(
     ? JSON.stringify(nextBackup)
     : encodeBase64Utf8(JSON.stringify(nextBackup));
 
+  const nextHistory = isPlainObject(nextBackup.history) ? nextBackup.history : {};
   return {
     nextPayload,
-    historyCount: Object.keys(existingHistory).length,
+    historyCount: Object.keys(nextHistory).length,
   };
 }

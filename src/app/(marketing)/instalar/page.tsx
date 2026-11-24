@@ -11,92 +11,81 @@ import {
   HelpCircle,
   ChevronDown,
   Lock,
-  Sparkles,
 } from "lucide-react";
 
 const STEPS = [
   {
     step: 1,
-    title: "1. Baixar o Instalador",
+    title: "1. Baixar o APK",
     icon: Download,
-    badge: "Android Moderno (64-bit)",
-    summary:
-      "Baixe a versão recomendada diretamente na página de downloads oficial.",
+    badge: "Android 64-bit",
+    summary: "Baixe a versão atual na página de downloads.",
     details: [
-      "A opção Padrão (64-bit) funciona na imensa maioria dos celulares Android atuais.",
-      "No navegador do celular, toque em Baixar e aguarde a conclusão do arquivo (~53 MB).",
-      "Caso apareça o aviso padrão do navegador para aplicativos fora da loja, toque em 'Fazer o download mesmo assim'.",
+      "A opção Padrão (64-bit) funciona na maioria dos celulares Android.",
+      "Toque em Baixar e aguarde concluir o download (~54 MB).",
+      "Se o navegador exibir aviso, confirme o download.",
     ],
   },
   {
     step: 2,
-    title: "2. Autorizar a Instalação",
+    title: "2. Permitir Instalação",
     icon: Lock,
-    badge: "Permissão Única",
-    summary:
-      "No Android, basta conceder permissão uma única vez ao seu navegador para concluir a instalação.",
+    badge: "Uma única vez",
+    summary: "Autorize seu navegador a instalar aplicativos.",
     details: [
-      "Toque na notificação de download concluído para abrir o instalador do Android.",
-      "Se for sua primeira instalação fora da loja, toque em 'Configurações'.",
-      "Ative a opção 'Permitir desta fonte' e volte uma tela.",
+      "Abra o arquivo baixado pela notificação ou pasta Downloads.",
+      "Se solicitado, toque em 'Configurações'.",
+      "Ative 'Permitir desta fonte' e volte uma tela.",
     ],
   },
   {
     step: 3,
-    title: "3. Abrir e Sincronizar",
+    title: "3. Abrir o App",
     icon: Smartphone,
-    badge: "Pronto para Ler",
-    summary:
-      "Finalize a instalação, abra o YOMI e entre com sua conta Google para manter tudo salvo na nuvem.",
+    badge: "Pronto para usar",
+    summary: "Instale e comece a ler ou conecte sua conta.",
     details: [
-      "Toque em 'Instalar' e aguarde alguns instantes.",
-      "No aplicativo, acesse seu Perfil para conectar sua conta Google ou restaurar um arquivo .kuro.",
-      "Sua biblioteca passa a sincronizar automaticamente entre o celular e este site.",
+      "Toque em 'Instalar' e aguarde alguns segundos.",
+      "No Perfil, entre com sua conta Google se quiser sincronizar na nuvem ou restaurar um backup .kuro.",
     ],
   },
   {
     step: 4,
-    title: "4. Atualizar Sem Perder Nada",
+    title: "4. Atualizar",
     icon: RefreshCw,
-    badge: "Atualização Segura",
-    summary:
-      "Nunca desinstale o aplicativo antigo antes de atualizar. Instale a nova versão diretamente por cima.",
+    badge: "Sem perder dados",
+    summary: "Instale a nova versão por cima sem desinstalar a anterior.",
     details: [
-      "Todas as atualizações oficiais compartilham a mesma assinatura digital.",
-      "Ao abrir o novo arquivo baixado e tocar em 'Atualizar', seus favoritos, capítulos salvos e Blobatar ficam intactos.",
-      "O próprio aplicativo avisa quando uma nova versão está disponível.",
+      "Baixe a atualização aqui no site e toque em 'Atualizar'.",
+      "Seus favoritos, histórico e downloads locais permanecem salvos.",
     ],
   },
 ];
 
 const FAQS = [
   {
-    q: "Qual opção devo escolher para o meu aparelho?",
-    a: "Escolha 'Android Moderno (64-bit)'. Quase todos os smartphones modernos (Samsung Galaxy, Motorola, Xiaomi, Asus, Google Pixel) são 64-bit. Use 'Android Antigo (32-bit)' apenas em aparelhos bem antigos caso o instalador recuse a opção padrão, e 'PC / Emulador' somente em emuladores ou Chromebooks.",
+    q: "Qual opção escolher para o meu aparelho?",
+    a: "Escolha 'Android Moderno (64-bit)', compatível com quase todos os celulares atuais. Use '32-bit' apenas em aparelhos bem antigos e 'PC / Emulador' em emuladores ou Chromebooks.",
   },
   {
-    q: "Por que o navegador ou o Android exibe um aviso antes de instalar?",
-    a: "Esse alerta é padrão no Android para qualquer aplicativo baixado fora da Play Store. Todos os pacotes distribuídos neste portal oficial são verificados digitalmente com hash SHA-256 para garantir autenticidade.",
+    q: "Por que o Android mostra um aviso ao instalar?",
+    a: "É o aviso padrão do Android para apps fora da Play Store. Cada arquivo traz hash SHA-256 oficial para conferência.",
   },
   {
-    q: "Se eu atualizar por cima do aplicativo atual, perco meus favoritos ou histórico?",
-    a: "Não! Desde que você baixe o arquivo oficial desta página e toque em 'Atualizar' sem desinstalar a versão anterior, todos os seus dados, capítulos offline e preferências são mantidos.",
+    q: "Atualizar por cima apaga minha biblioteca?",
+    a: "Não. Basta instalar a nova versão sem desinstalar a antiga para preservar favoritos, downloads e histórico.",
   },
   {
-    q: "Apareceu mensagem de pacote inválido ou conflito ao atualizar. Como resolver?",
-    a: "Isso geralmente ocorre se você selecionou uma versão incompatível com o processador do aparelho ou possui uma versão muito antiga de testes. Antes de reinstalar, faça backup da sua biblioteca na nuvem ou salve um arquivo .kuro nas configurações do app.",
+    q: "Deu erro de pacote inválido ao atualizar. O que fazer?",
+    a: "Verifique se você baixou a arquitetura correta (64-bit ou 32-bit). Se precisar reinstalar do zero, faça backup antes na nuvem ou exporte um arquivo .kuro.",
   },
   {
-    q: "Como funciona a sincronização entre o celular e o portal web?",
-    a: "Ao entrar com a mesma conta Google no aplicativo e no portal web, seus favoritos, progresso de leitura, listas e Blobatar ficam sincronizados com segurança e isolamento individual por conta.",
+    q: "Como funciona a sincronização entre app e web?",
+    a: "Entrando com a mesma conta no app e no site, seus favoritos, listas, comentários e progresso ficam sincronizados.",
   },
   {
-    q: "O que é o arquivo .kuro?",
-    a: "É o formato de backup portátil do YOMI. Ele reúne seus favoritos, histórico recente, coleções e configurações pessoais em um único arquivo fácil de salvar ou restaurar a qualquer momento.",
-  },
-  {
-    q: "Existe versão nativa para iPhone (iOS)?",
-    a: "O aplicativo dedicado está disponível para Android. No iPhone, iPad ou computador, você pode usar livremente o Catálogo Web e o Leitor pelo navegador com sincronização completa da sua conta.",
+    q: "Existe versão para iPhone (iOS)?",
+    a: "O app dedicado é exclusivo para Android. No iPhone ou iPad, leia diretamente pelo navegador.",
   },
 ];
 
@@ -110,16 +99,12 @@ export default function InstalarPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 pt-28 sm:pt-32 pb-20 space-y-16">
       {/* Header */}
-      <div className="text-center max-w-2xl mx-auto space-y-4">
-        <span className="inline-flex items-center gap-2 rounded-full border border-[var(--yomi-accent)]/30 bg-[var(--yomi-accent)]/10 px-3.5 py-1 text-xs font-semibold text-[var(--yomi-accent)]">
-          <Sparkles className="h-3.5 w-3.5" />
-          Guia Interativo &amp; Perguntas Frequentes
-        </span>
+      <div className="text-center max-w-2xl mx-auto space-y-3">
         <h1 className="font-display text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
-          Instalação Rápida no Android
+          Como instalar no Android
         </h1>
         <p className="text-sm sm:text-base text-white/60">
-          Quatro passos diretos para instalar ou atualizar o YOMI mantendo sua biblioteca intacta.
+          Quatro passos rápidos para instalar ou atualizar mantendo seus dados.
         </p>
       </div>
 
@@ -191,7 +176,7 @@ export default function InstalarPage() {
               <ShieldCheck className="h-8 w-8 text-emerald-400 shrink-0" />
               <div>
                 <h3 className="font-display text-sm font-bold text-white">
-                  Garantia de Integridade
+                  Integridade SHA-256
                 </h3>
                 <p className="text-xs text-white/55">
                   Assinatura oficial verificada
@@ -199,7 +184,7 @@ export default function InstalarPage() {
               </div>
             </div>
             <p className="text-xs text-white/60 leading-relaxed">
-              Você pode conferir o checksum SHA-256 do arquivo baixado na página de downloads para confirmar a autenticidade do pacote.
+              Confira o checksum SHA-256 na página de downloads se quiser validar o APK.
             </p>
             <div className="flex gap-2.5 pt-1">
               <Link

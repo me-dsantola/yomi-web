@@ -1,6 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildMangaCoverUrl,
+  cleanMangaDexId,
+  clearMangaChaptersCache,
+  fetchChapterMetaAndPages,
+  fetchMangaChaptersWithMeta,
+  fetchMangaCoversByIds,
+  fetchMangaDetails,
+  MangaDexFeedError,
+  matchesWorkTitle,
+  normalizeChapterNumber,
   resolveBestTitle,
 } from '@/lib/mangadex/api';
 import {
@@ -90,5 +99,412 @@ describe('Catálogo Curado & Normalização MangaDex', () => {
 
     const fallback = buildMangaCoverUrl('', undefined);
     expect(fallback).toBe('/brand/icon-1024.png');
+  });
+});
+
+function makeRawChapter(
+  id: string,
+  chapter: string | null,
+  lang: string,
+  options: { title?: string; volume?: string | null; pages?: number } = {}
+) {
+  return {
+    id,
+    attributes: {
+      chapter,
+      title: options.title ?? '',
+      volume: options.volume ?? null,
+      translatedLanguage: lang,
+      pages: options.pages ?? 18,
+      publishAt: '2026-11-01T12:00:00Z',
+    },
+    relationships: [
+      { type: 'scanlation_group', attributes: { name: `Scan ${lang.toUpperCase()}` } },
+    ],
+  };
+}
+
+describe('Recuperação Paginada de Capítulos, Idiomas, Deduplicação e Erros', () => {
+  beforeEach(() => {
+    clearMangaChaptersCache();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('pagina corretamente obras com mais de 1.500 capítulos avançando offset até total', async () => {
+    const mangaId = '11111111-1111-4111-8111-111111111111';
+    const totalChapters = 1650;
+    const allPtChapters = Array.from({ length: totalChapters }, (_, idx) =>
+      makeRawChapter(`pt-ch-${idx + 1}`, String(idx + 1), 'pt-br')
+    );
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(String(input), 'https://yomi.local');
+      const langs = url.searchParams.getAll('translatedLanguage[]');
+      const offset = Number(url.searchParams.get('offset') ?? '0');
+      const limit = Number(url.searchParams.get('limit') ?? '500');
+
+      if (langs.includes('pt-br')) {
+        return new Response(
+          JSON.stringify({
+            data: allPtChapters.slice(offset, offset + limit),
+            total: totalChapters,
+          }),
+          { status: 200 }
+        );
+      }
+
+      return new Response(JSON.stringify({ data: [], total: 0 }), {
+        status: 200,
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const res = await fetchMangaChaptersWithMeta(mangaId, {
+      direction: 'asc',
+      includeSpanishFallback: true,
+    });
+
+    expect(res.chapters).toHaveLength(1650);
+    expect(res.chapters[0].chapterNumber).toBe('1');
+    expect(res.chapters[1649].chapterNumber).toBe('1650');
+    expect(res.languagesUsed).toEqual(['PT-BR']);
+    expect(res.totalFeedRecords).toBe(1650);
+    // 4 páginas para pt-br (0, 500, 1000, 1500) + 1 para en + 1 para es = 6
+    expect(fetchMock).toHaveBeenCalledTimes(6);
+  });
+
+  it('aplica prioridade PT-BR -> EN -> ES preenchendo lacunas e respeita toggle sem ES', async () => {
+    const mangaId = '22222222-2222-4222-8222-222222222222';
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(String(input), 'https://yomi.local');
+      const lang = url.searchParams.getAll('translatedLanguage[]')[0];
+
+      if (lang === 'pt-br') {
+        return new Response(
+          JSON.stringify({
+            data: [
+              makeRawChapter('ch-1-pt', '1', 'pt-br'),
+              makeRawChapter('ch-3-pt', '3', 'pt-br'),
+            ],
+            total: 2,
+          }),
+          { status: 200 }
+        );
+      }
+      if (lang === 'en') {
+        return new Response(
+          JSON.stringify({
+            data: [
+              makeRawChapter('ch-1-en', '1', 'en'),
+              makeRawChapter('ch-2-en', '2', 'en'),
+            ],
+            total: 2,
+          }),
+          { status: 200 }
+        );
+      }
+      if (lang === 'es') {
+        return new Response(
+          JSON.stringify({
+            data: [
+              makeRawChapter('ch-2-es', '2', 'es'),
+              makeRawChapter('ch-4-es', '4', 'es'),
+            ],
+            total: 2,
+          }),
+          { status: 200 }
+        );
+      }
+      return new Response(JSON.stringify({ data: [], total: 0 }), { status: 200 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const withEs = await fetchMangaChaptersWithMeta(mangaId, {
+      includeSpanishFallback: true,
+    });
+    expect(withEs.chapters.map((c) => `${c.chapterNumber}:${c.language}`)).toEqual([
+      '1:PT-BR',
+      '2:EN',
+      '3:PT-BR',
+      '4:ES',
+    ]);
+    expect(withEs.hasLanguageFallback).toBe(true);
+    expect(withEs.usedSpanishFallback).toBe(true);
+
+    const withoutEs = await fetchMangaChaptersWithMeta(mangaId, {
+      includeSpanishFallback: false,
+    });
+    expect(
+      withoutEs.chapters.map((c) => `${c.chapterNumber}:${c.language}`)
+    ).toEqual(['1:PT-BR', '2:EN', '3:PT-BR']);
+    expect(withoutEs.usedSpanishFallback).toBe(false);
+  });
+
+  it('preserva capítulo 0 legítimo e não sobrescreve múltiplos especiais/oneshots sem número', async () => {
+    expect(normalizeChapterNumber('0').canonicalNumber).toBe('0');
+    expect(normalizeChapterNumber('01.0').canonicalNumber).toBe('1');
+    expect(normalizeChapterNumber(null).canonicalNumber).toBeNull();
+
+    const mangaId = '33333333-3333-4333-8333-333333333333';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = new URL(String(input), 'https://yomi.local');
+        const lang = url.searchParams.getAll('translatedLanguage[]')[0];
+        if (lang === 'pt-br') {
+          return new Response(
+            JSON.stringify({
+              data: [
+                makeRawChapter('ch-0', '0', 'pt-br', { title: 'Prólogo' }),
+                makeRawChapter('ch-01-a', '01', 'pt-br', { pages: 12 }),
+                makeRawChapter('ch-01-b', '1.0', 'pt-br', { pages: 24 }),
+                makeRawChapter('sp-1', null, 'pt-br', {
+                  volume: '1',
+                  title: 'Bastidores Vol. 1',
+                }),
+                makeRawChapter('sp-2', null, 'pt-br', {
+                  volume: '2',
+                  title: 'Capítulo Bônus',
+                }),
+                makeRawChapter('sp-oneshot', '', 'pt-br', {
+                  title: 'Oneshot Piloto',
+                }),
+              ],
+              total: 6,
+            }),
+            { status: 200 }
+          );
+        }
+        return new Response(JSON.stringify({ data: [], total: 0 }), { status: 200 });
+      })
+    );
+
+    const res = await fetchMangaChaptersWithMeta(mangaId, {
+      includeSpanishFallback: false,
+    });
+
+    // Cap. 0 + Cap. 1 (dedup 01/1.0 mantendo maior páginas = ch-01-b) + 3 especiais distintos = 5
+    expect(res.chapters).toHaveLength(5);
+    expect(res.chapters[0].chapterNumber).toBe('0');
+    expect(res.chapters[1].id).toBe('ch-01-b');
+    const specials = res.chapters.filter((c) => c.isSpecial);
+    expect(specials).toHaveLength(3);
+    expect(specials.map((s) => s.id)).toEqual(['sp-1', 'sp-2', 'sp-oneshot']);
+  });
+
+  it('executa retry em HTTP 429 e propaga MangaDexFeedError quando todas as fontes falham', async () => {
+    const mangaId = '44444444-4444-4444-8444-444444444444';
+    let ptAttempts = 0;
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = new URL(String(input), 'https://yomi.local');
+        const lang = url.searchParams.getAll('translatedLanguage[]')[0];
+        if (lang === 'pt-br') {
+          ptAttempts += 1;
+          if (ptAttempts === 1) {
+            return new Response(JSON.stringify({ error: 'rate limit' }), {
+              status: 429,
+              headers: { 'Retry-After': '0' },
+            });
+          }
+          return new Response(
+            JSON.stringify({
+              data: [makeRawChapter('ok-1', '1', 'pt-br')],
+              total: 1,
+            }),
+            { status: 200 }
+          );
+        }
+        return new Response(JSON.stringify({ data: [], total: 0 }), { status: 200 });
+      })
+    );
+
+    const recovered = await fetchMangaChaptersWithMeta(mangaId, {
+      includeSpanishFallback: false,
+      retryBaseDelayMs: 1,
+    });
+    expect(ptAttempts).toBe(2);
+    expect(recovered.chapters).toHaveLength(1);
+
+    clearMangaChaptersCache();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(JSON.stringify({ error: 'down' }), { status: 503 }))
+    );
+
+    await expect(
+      fetchMangaChaptersWithMeta(mangaId, {
+        includeSpanishFallback: false,
+        retryBaseDelayMs: 1,
+      })
+    ).rejects.toThrow(MangaDexFeedError);
+  });
+
+  it('evita associar obra errada por similaridade solta em fetchMangaDetails e trata altTitles', async () => {
+    expect(
+      matchesWorkTitle(
+        {
+          title: 'Na Honjaman Level-Up',
+          altTitle: 'Solo Leveling',
+          altTitles: ['Solo Leveling', 'Eu Sozinho Subo de Nível'],
+        },
+        'Solo Leveling'
+      )
+    ).toBe(true);
+
+    expect(
+      matchesWorkTitle(
+        {
+          title: 'Isekai Nonbiri Nouka',
+          altTitle: 'Farming Life in Another World',
+          altTitles: [],
+        },
+        'Vagabond'
+      )
+    ).toBe(false);
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            data: [
+              {
+                id: '99999999-9999-4999-8999-999999999999',
+                attributes: {
+                  title: { en: 'Totalmente Outra Obra' },
+                  altTitles: [],
+                  description: { en: 'Nada a ver' },
+                  tags: [],
+                },
+                relationships: [],
+              },
+            ],
+          }),
+          { status: 200 }
+        )
+      )
+    );
+
+    await expect(
+      fetchMangaDetails('obra-inexistente-xyz', 'Obra Completamente Desconhecida')
+    ).rejects.toThrow(/Obra não encontrada/i);
+  });
+
+  it('decodifica prefixos legados (ani_title_, mal_title_, cmk_mdx_) e resolve capa do mangá no leitor', async () => {
+    expect(cleanMangaDexId('cmk_mdx_0e2cb981-70c8-4229-aff7-6be966852b03')).toBe(
+      '0e2cb981-70c8-4229-aff7-6be966852b03'
+    );
+    expect(cleanMangaDexId('ani_title_Kanan-sama%20wa%20Akumade%20Choroi')).toBe(
+      'Kanan-sama wa Akumade Choroi'
+    );
+    expect(cleanMangaDexId('mal_title_One%20Piece')).toBe('One Piece');
+
+    const mangaId = '0e2cb981-70c8-4229-aff7-6be966852b03';
+    const chapterId = 'e317053c-d0cd-4fc5-8044-71c94086238d';
+    const seenUrls: string[] = [];
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        seenUrls.push(url);
+        if (url.includes(`/api/md/chapter/${chapterId}`)) {
+          return new Response(
+            JSON.stringify({
+              data: {
+                id: chapterId,
+                attributes: {
+                  chapter: '1',
+                  title: '',
+                  translatedLanguage: 'pt-br',
+                },
+                relationships: [
+                  {
+                    id: mangaId,
+                    type: 'manga',
+                    attributes: {
+                      title: { 'ja-ro': 'Kanan-sama wa Akumade Choroi' },
+                      altTitles: [{ en: 'Kanan-sama is Easy as Hell!' }],
+                    },
+                  },
+                ],
+              },
+            }),
+            { status: 200 }
+          );
+        }
+        if (url.includes(`/api/md/at-home/server/${chapterId}`)) {
+          return new Response(
+            JSON.stringify({
+              baseUrl: 'https://cmdxd98sb0x3yprd.mangadex.network',
+              chapter: {
+                hash: 'f5f84b4c',
+                data: ['1.jpg'],
+                dataSaver: ['1-s.jpg'],
+              },
+            }),
+            { status: 200 }
+          );
+        }
+        if (url.includes(`/api/md/manga/${mangaId}`)) {
+          return new Response(
+            JSON.stringify({
+              data: {
+                id: mangaId,
+                attributes: {
+                  title: { 'ja-ro': 'Kanan-sama wa Akumade Choroi' },
+                  altTitles: [{ en: 'Kanan-sama is Easy as Hell!' }],
+                },
+                relationships: [
+                  {
+                    type: 'cover_art',
+                    attributes: { fileName: '40442a51-cover.jpg' },
+                  },
+                ],
+              },
+            }),
+            { status: 200 }
+          );
+        }
+        if (url.includes('/api/md/manga?')) {
+          return new Response(
+            JSON.stringify({
+              data: [
+                {
+                  id: mangaId,
+                  attributes: {
+                    title: { 'ja-ro': 'Kanan-sama wa Akumade Choroi' },
+                    altTitles: [{ en: 'Kanan-sama is Easy as Hell!' }],
+                  },
+                  relationships: [
+                    {
+                      type: 'cover_art',
+                      attributes: { fileName: '40442a51-cover.jpg' },
+                    },
+                  ],
+                },
+              ],
+            }),
+            { status: 200 }
+          );
+        }
+        return new Response(JSON.stringify({ data: [] }), { status: 404 });
+      })
+    );
+
+    const res = await fetchChapterMetaAndPages(`cmk_mdx_${chapterId}`);
+    expect(res.chapterInfo.mangaId).toBe(mangaId);
+    expect(res.chapterInfo.mangaTitle).toBe('Kanan-sama is Easy as Hell!');
+    expect(res.chapterInfo.mangaCoverFileName).toBe('40442a51-cover.jpg');
+    expect(seenUrls.some((u) => u.includes('forcePort443=true'))).toBe(true);
+
+    const batchCovers = await fetchMangaCoversByIds([`cmk_mdx_${mangaId}`]);
+    expect(batchCovers[mangaId]?.coverFileName).toBe('40442a51-cover.jpg');
   });
 });

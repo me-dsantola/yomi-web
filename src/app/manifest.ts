@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "YOMI — Leitor de Mangás, Manhwas e Webtoons",
     short_name: "YOMI",
     description:
-      "Portal Oficial e Companion do aplicativo YOMI para Android com catálogo web e sincronização na nuvem.",
+      "Aplicativo YOMI para Android e leitor web com biblioteca sincronizada.",
     start_url: "/",
     display: "standalone",
     background_color: "#070709",

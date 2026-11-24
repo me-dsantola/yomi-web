@@ -8,4 +8,6 @@ coverage/
 .firebase/
 .lh/
 *.tsbuildinfo
+firestore-debug.log
+firebase-debug.log
 next-env.d.ts

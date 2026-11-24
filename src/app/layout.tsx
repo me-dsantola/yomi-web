@@ -25,6 +25,7 @@ export const viewport: Viewport = {
   colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
@@ -32,11 +33,11 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL || "https://yomi-reader.vercel.app"
   ),
   title: {
-    default: "YOMI — Leitor Minimalista de Mangás, Manhwas e Webtoons",
+    default: "YOMI — Leitor de Mangás, Manhwas e Webtoons",
     template: "%s | YOMI",
   },
   description:
-    "Portal Oficial e Companion do aplicativo YOMI para Android. Design AMOLED puro, leitura contínua de Webtoons e Mangás, sincronização na nuvem e catálogo web integrado.",
+    "Aplicativo YOMI para Android e leitor web com design AMOLED, sincronização em nuvem e catálogo integrado.",
   applicationName: "YOMI",
   keywords: [
     "YOMI",
@@ -51,16 +52,16 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "pt_BR",
-    siteName: "YOMI Oficial",
-    title: "YOMI — Leitor Minimalista de Mangás, Manhwas e Webtoons",
+    siteName: "YOMI",
+    title: "YOMI — Leitor de Mangás, Manhwas e Webtoons",
     description:
-      "Baixe o APK oficial para Android (sempre atualizado), sincronize sua biblioteca na nuvem e leia pelo navegador.",
+      "Baixe o app para Android ou leia pelo navegador com sua biblioteca sincronizada.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "YOMI — Leitor Minimalista de Mangás, Manhwas e Webtoons",
+    title: "YOMI — Leitor de Mangás, Manhwas e Webtoons",
     description:
-      "Baixe o APK oficial para Android (sempre atualizado), sincronize sua biblioteca na nuvem e leia pelo navegador.",
+      "Baixe o app para Android ou leia pelo navegador com sua biblioteca sincronizada.",
   },
   icons: {
     icon: "/brand/yomi-simbolo-gradiente.svg",

@@ -80,12 +80,12 @@ export function HeroSectionAnimated({
               <h1 className="font-display text-4xl sm:text-5xl lg:text-[3.7rem] font-extrabold tracking-tight text-white leading-[1.03]">
                 Mangás, Manhwas e Webtoons.{' '}
                 <span className="block bg-gradient-to-r from-white via-white/90 to-[var(--yomi-accent)] bg-clip-text text-transparent">
-                  Sem limites, onde você estiver.
+                  No celular e no navegador.
                 </span>
               </h1>
 
               <p className="max-w-lg text-base sm:text-lg leading-relaxed text-white/60">
-                Mais de 50.000 obras em alta definição, leitura contínua ou paginada e biblioteca sincronizada em tempo real entre o celular e o navegador.
+                Mais de 50.000 obras em alta definição, leitura contínua ou paginada e biblioteca sincronizada.
               </p>
             </div>
 
@@ -227,6 +227,7 @@ export function HeroSectionAnimated({
                 <div className="relative overflow-hidden rounded-[26px] border border-white/10 bg-[#0D0D14]/90 p-5 flex items-center gap-4">
                   <div className="shrink-0">
                     <BlobatarCompanion
+                context="welcome"
                       seed="YOMI"
                       mascotName="Yomi"
                       size={84}
@@ -239,7 +240,7 @@ export function HeroSectionAnimated({
                       Mascote
                     </span>
                     <h3 className="mt-1.5 font-display text-base font-bold text-white">
-                      Blobatar Reativo
+                      Kuro, seu companheiro
                     </h3>
                     <p className="mt-0.5 text-xs text-white/55">
                       Acompanha as cores do tema e seu cursor.

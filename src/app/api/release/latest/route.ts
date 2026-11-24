@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { fetchLatestYomiRelease } from '@/lib/github/releases';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const release = await fetchLatestYomiRelease();
+  const release = await fetchLatestYomiRelease(fetch, { noStore: true });
   return NextResponse.json(release, {
     headers: {
-      'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
     },
   });
 }

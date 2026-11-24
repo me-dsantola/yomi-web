@@ -2,6 +2,7 @@ export interface MangaDexWork {
   id: string;
   title: string;
   altTitle?: string;
+  altTitles?: string[];
   description: string;
   status: 'ongoing' | 'completed' | 'hiatus' | 'cancelled' | string;
   year?: number | null;
@@ -14,6 +15,9 @@ export interface MangaDexWork {
   coverHighResUrl: string;
   accentColor?: string;
   featuredChapterLabel?: string;
+  hasAvailableChapters?: boolean;
+  availableChaptersCount?: number;
+  translatedLanguages?: string[];
 }
 
 export interface MangaDexChapter {
@@ -26,6 +30,17 @@ export interface MangaDexChapter {
   publishAt: string;
   scanlationGroup: string;
   externalUrl?: string | null;
+  isSpecial?: boolean;
+  canonicalKey?: string;
+}
+
+export interface MangaDexChaptersResult {
+  chapters: MangaDexChapter[];
+  languagesUsed: string[];
+  hasLanguageFallback: boolean;
+  usedSpanishFallback: boolean;
+  totalFeedRecords: number;
+  partialFailureLanguages: string[];
 }
 
 export interface MangaDexChapterPages {

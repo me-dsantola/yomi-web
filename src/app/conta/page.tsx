@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
-  Award,
   BookOpen,
   Clock,
   Cloud,
@@ -18,7 +17,6 @@ import {
   LogOut,
   Plus,
   RefreshCw,
-  Sparkles,
   Trash2,
   X,
 } from 'lucide-react';
@@ -261,12 +259,10 @@ export default function ContaDashboardPage() {
 
           <div className="space-y-2 max-w-xl mx-auto">
             <h1 className="font-display text-3xl sm:text-4xl font-extrabold text-white">
-              Minha Biblioteca na Nuvem
+              Minha Conta
             </h1>
             <p className="text-sm sm:text-base text-white/60 leading-relaxed">
-              Entre com seu e-mail e senha ou conta Google utilizada no
-              aplicativo YOMI para acompanhar seus favoritos, histórico de
-              leitura, seu Blobatar e gerenciar backups{' '}
+              Entre para sincronizar favoritos, histórico, Blobatar e backups{' '}
               <code className="rounded bg-white/10 px-1.5 py-0.5 text-xs text-white">
                 .kuro
               </code>
@@ -323,10 +319,8 @@ export default function ContaDashboardPage() {
       {demoMode && !user && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-purple-500/30 bg-purple-500/10 px-5 py-3 text-xs text-purple-200">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-purple-400" />
             <span>
-              <strong>Modo Demonstração:</strong> Exibindo uma biblioteca de
-              exemplo conectada ao YOMI Cloud.
+              <strong>Modo Demonstração:</strong> Conta de exemplo. Entre na sua conta para sincronizar.
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -438,6 +432,8 @@ export default function ContaDashboardPage() {
                 ) : (
                   <div className="rounded-3xl border-4 border-[#0E0E14] bg-[#14141C] p-2 shadow-xl w-fit">
                     <BlobatarCompanion
+                      context="profile"
+                      animated={cloudState?.profile?.blobatarAnimated !== false}
                       chaptersRead={readChaptersCount}
                       accentColor={profileAccent}
                       mascotName={cloudState.mascotName}
@@ -544,9 +540,9 @@ export default function ContaDashboardPage() {
             <div className="md:col-span-6 rounded-2xl border border-white/[0.08] bg-[#0E0E14] p-5 space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <Award
-                    className="h-4 w-4"
-                    style={{ color: profileAccent }}
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: profileAccent }}
                   />
                   <span className="text-xs font-semibold uppercase tracking-wider text-white/55">
                     Rank do Leitor
@@ -826,14 +822,14 @@ export default function ContaDashboardPage() {
                       value={newListName}
                       onChange={(e) => setNewListName(e.target.value)}
                       placeholder="Nome da coleção"
-                      className="rounded-xl border border-white/12 bg-black/40 px-3.5 py-2 text-xs text-white placeholder:text-white/35 focus:border-[var(--yomi-accent)] focus:outline-none"
+                      className="rounded-xl border border-white/12 bg-black/40 px-3.5 py-2 text-base sm:text-xs text-white placeholder:text-white/35 focus:border-[var(--yomi-accent)] focus:outline-none"
                     />
                     <input
                       type="text"
                       value={newListDesc}
                       onChange={(e) => setNewListDesc(e.target.value)}
                       placeholder="Descrição curta (opcional)"
-                      className="rounded-xl border border-white/12 bg-black/40 px-3.5 py-2 text-xs text-white placeholder:text-white/35 focus:border-[var(--yomi-accent)] focus:outline-none"
+                      className="rounded-xl border border-white/12 bg-black/40 px-3.5 py-2 text-base sm:text-xs text-white placeholder:text-white/35 focus:border-[var(--yomi-accent)] focus:outline-none"
                     />
                   </div>
                   <div className="flex justify-end">
@@ -937,7 +933,7 @@ export default function ContaDashboardPage() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-white/12 bg-[#0E0E14] p-6 sm:p-7 space-y-5 shadow-2xl"
+            className="w-full max-w-lg max-h-[90dvh] overflow-y-auto overscroll-contain rounded-3xl border border-white/12 bg-[#0E0E14] p-5 sm:p-7 space-y-5 shadow-2xl"
           >
             <div className="flex items-center justify-between">
               <h2 className="font-display text-xl font-bold text-white">
@@ -954,6 +950,8 @@ export default function ContaDashboardPage() {
 
             <div className="flex items-center gap-4 rounded-2xl border border-white/[0.07] bg-black/30 p-4">
               <BlobatarCompanion
+                context="profile"
+                animated={cloudState?.profile?.blobatarAnimated !== false}
                 mascotName={editMascotName || 'Kuro'}
                 expression={editExpression}
                 accentColor={argbIntToHex(editAccentArgb)}
@@ -981,7 +979,7 @@ export default function ContaDashboardPage() {
                   maxLength={40}
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full rounded-xl border border-white/12 bg-black/40 px-3.5 py-2.5 text-sm text-white focus:border-[var(--yomi-accent)] focus:outline-none"
+                  className="w-full rounded-xl border border-white/12 bg-black/40 px-3.5 py-2.5 text-base sm:text-sm text-white focus:border-[var(--yomi-accent)] focus:outline-none"
                 />
               </div>
 
@@ -993,7 +991,7 @@ export default function ContaDashboardPage() {
                   value={editBio}
                   onChange={(e) => setEditBio(e.target.value)}
                   placeholder="Conte um pouco sobre seus gêneros e leituras..."
-                  className="w-full rounded-xl border border-white/12 bg-black/40 px-3.5 py-2.5 text-sm text-white focus:border-[var(--yomi-accent)] focus:outline-none"
+                  className="w-full rounded-xl border border-white/12 bg-black/40 px-3.5 py-2.5 text-base sm:text-sm text-white focus:border-[var(--yomi-accent)] focus:outline-none"
                 />
               </div>
 
@@ -1007,7 +1005,7 @@ export default function ContaDashboardPage() {
                   value={editGenres}
                   onChange={(e) => setEditGenres(e.target.value)}
                   placeholder="Ação, Fantasia, Seinen, Romance"
-                  className="w-full rounded-xl border border-white/12 bg-black/40 px-3.5 py-2.5 text-sm text-white focus:border-[var(--yomi-accent)] focus:outline-none"
+                  className="w-full rounded-xl border border-white/12 bg-black/40 px-3.5 py-2.5 text-base sm:text-sm text-white focus:border-[var(--yomi-accent)] focus:outline-none"
                 />
               </div>
 
@@ -1021,7 +1019,7 @@ export default function ContaDashboardPage() {
                     maxLength={24}
                     value={editMascotName}
                     onChange={(e) => setEditMascotName(e.target.value)}
-                    className="w-full rounded-xl border border-white/12 bg-black/40 px-3.5 py-2.5 text-sm text-white focus:border-[var(--yomi-accent)] focus:outline-none"
+                    className="w-full rounded-xl border border-white/12 bg-black/40 px-3.5 py-2.5 text-base sm:text-sm text-white focus:border-[var(--yomi-accent)] focus:outline-none"
                   />
                 </div>
 
@@ -1032,7 +1030,7 @@ export default function ContaDashboardPage() {
                   <select
                     value={editExpression}
                     onChange={(e) => setEditExpression(e.target.value)}
-                    className="w-full rounded-xl border border-white/12 bg-[#09090d] px-3 py-2.5 text-sm text-white focus:border-[var(--yomi-accent)] focus:outline-none"
+                    className="w-full rounded-xl border border-white/12 bg-[#09090d] px-3 py-2.5 text-base sm:text-sm text-white focus:border-[var(--yomi-accent)] focus:outline-none"
                   >
                     {BLOBATAR_EXPRESSIONS.map((item) => (
                       <option key={item.id} value={item.id}>
