@@ -51,7 +51,7 @@ try {
         const context=await browser.newContext({viewport:{width,height},isMobile:width<900,hasTouch:width<900,reducedMotion:'reduce'});
         await fixture(context);
         const page=await context.newPage();
-        const pageErrors=[];page.on('pageerror',error=>pageErrors.push(error.message));
+        const pageErrors=[];page.on('pageerror',error=>pageErrors.push(page.url()+': '+error.message));
         for(const route of ['/','/explorar','/biblioteca','/conta']) {
           await page.goto(base+route);
           await page.locator('main').waitFor();
@@ -101,6 +101,7 @@ try {
       await waitFor(()=>rating.getByText('Sua nota: 4 / 5',{exact:true}).isVisible(),'Vote edit was not saved');
       await page.reload();
       await waitFor(()=>rating.getByText('Sua nota: 4 / 5',{exact:true}).isVisible(),'Vote was not persisted');
+      await page.screenshot({path:'test-results/mobile/'+name+'-work-rating.png'});
       await page.goto(base);
       await page.getByRole('heading',{name:'Em alta no YOMI',exact:true}).waitFor();
       await noOverflow(page);

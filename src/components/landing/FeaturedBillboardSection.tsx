@@ -210,7 +210,10 @@ export function FeaturedBillboardSection({
   initialWorks,
   compactSpacing = false,
 }: FeaturedBillboardSectionProps) {
-  const shouldReduceMotion = Boolean(useReducedMotion());
+  const reducedMotion = useReducedMotion();
+  const [hasHydrated, setHasHydrated] = useState(false);
+  useEffect(() => { setHasHydrated(true); }, []);
+  const shouldReduceMotion = hasHydrated && Boolean(reducedMotion);
   const queryClient = useQueryClient();
   const { user, openAuthModal } = useYomiAuth();
 
