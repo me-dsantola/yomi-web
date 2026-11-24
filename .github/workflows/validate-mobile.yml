@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
+      YOMI_BROWSER_DEV: '1'
       NEXT_PUBLIC_YOMI_EMULATORS: '1'
       NEXT_PUBLIC_FIREBASE_PROJECT_ID: demo-yomi-kuro
       NEXT_PUBLIC_FIREBASE_API_KEY: test-key

@@ -10,7 +10,7 @@ const chapterId = '22222222-2222-4222-8222-222222222222';
 const image = '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200"><rect width="800" height="1200" fill="#171721"/><text x="70" y="150" fill="white" font-size="36">Yomi test page</text></svg>';
 const chapter = {id:chapterId,attributes:{chapter:'1',title:'Test chapter',pages:5,translatedLanguage:'pt-br'},relationships:[{type:'manga',id:workId,attributes:{title:{en:'Yomi Test Work'}}},{type:'scanlation_group',attributes:{name:'Test group'}}]};
 const work = {id:workId,attributes:{title:{en:'Yomi Test Work'},description:{en:'Synthetic test work'},status:'ongoing',contentRating:'safe',tags:[]},relationships:[]};
-const server = spawn(process.execPath, ['node_modules/next/dist/bin/next','start','-p','3100'], {stdio:'inherit'});
+const server = spawn(process.execPath, ['node_modules/next/dist/bin/next', process.env.YOMI_BROWSER_DEV === '1' ? 'dev' : 'start','-p','3100'], {stdio:'inherit'});
 await mkdir('test-results/mobile', {recursive:true});
 async function waitFor(predicate, message, timeout=30000) {
   const start=Date.now();
@@ -52,10 +52,20 @@ try {
         await fixture(context);
         const page=await context.newPage();
         const pageErrors=[];page.on('pageerror',error=>pageErrors.push(page.url()+': '+error.message));
-        for(const route of ['/','/explorar','/biblioteca','/conta']) {
+        page.on('console', message => { if (message.type() === 'error') console.error(page.url(), message.text()); });
+        for(const route of ['/','/explorar','/biblioteca','/conta','/obra/'+workId]) {
           await page.goto(base+route);
           await page.locator('main').waitFor();
+          await page.waitForTimeout(300);
+          assert.deepEqual(pageErrors,[], 'Page hydration: '+route);
           await noOverflow(page);
+          if (route.startsWith('/obra/')) {
+            const stars = page.getByRole('region', {name:'Avaliação da comunidade'}).getByRole('button', {name:/Avaliar com/});
+            await stars.first().waitFor();
+            const boxes = await Promise.all((await stars.all()).map(star=>star.boundingBox()));
+            assert.equal(boxes.length,5);
+            assert.ok(boxes.every(box=>box && box.width>=44 && box.height>=44 && Math.abs(box.y-boxes[0].y)<1), 'Rating stars must remain together with 44px touch targets');
+          }
         }
         await page.goto(base+'/ler/'+chapterId);
         await page.getByRole('button',{name:'Pag. LTR',exact:true}).waitFor();

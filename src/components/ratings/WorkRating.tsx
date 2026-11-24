@@ -37,14 +37,14 @@ export function WorkRating({ workId }: { workId: string }) {
   const count = summary.data?.count ?? 0;
   const average = count > 0 ? (summary.data!.total / count).toFixed(1).replace('.', ',') : null;
   return (
-    <section aria-label="Avaliação da comunidade" className="rounded-2xl border border-white/10 bg-white/[0.025] p-4 space-y-3">
+    <section aria-label="Avaliação da comunidade" className="rounded-2xl border border-white/10 bg-white/[0.025] p-2 sm:p-4 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-xs font-semibold text-white/75">Avaliação da comunidade</span>
         <span className="text-xs text-white/55" aria-live="polite">
           {summary.isPending ? 'Carregando notas…' : summary.isError ? 'Notas indisponíveis' : average ? `${average} / 5 · ${count} ${count === 1 ? 'avaliação' : 'avaliações'}` : 'Seja o primeiro a avaliar'}
         </span>
       </div>
-      <div role="group" aria-label="Sua nota" aria-busy={saving} className="flex flex-wrap items-center gap-1">
+      <div role="group" aria-label="Sua nota" aria-busy={saving} className="flex flex-wrap items-center gap-0">
         {[1, 2, 3, 4, 5].map((score) => (
           <button key={score} type="button" aria-label={`Avaliar com ${score} ${score === 1 ? 'estrela' : 'estrelas'}`} aria-pressed={mine.data === score}
             disabled={saving || Boolean(user && (mine.isPending || mine.isError))}
