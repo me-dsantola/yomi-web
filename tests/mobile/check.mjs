@@ -119,6 +119,14 @@ try {
       await page.getByRole('heading',{name:'Em alta no YOMI',exact:true}).waitFor();
       await noOverflow(page);
       await page.screenshot({path:'test-results/mobile/'+name+'-community-ranking.png'});
+      await page.goto(base+'/conta');
+      const gif = 'R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+      await page.getByLabel('Alterar foto',{exact:true}).setInputFiles({name:'avatar.gif',mimeType:'image/gif',buffer:Buffer.from(gif,'base64')});
+      await page.getByText('Imagem compacta salva.',{exact:true}).waitFor();
+      await page.reload();
+      await page.locator('img[src^="data:image/gif;base64,"]').first().waitFor();
+      await noOverflow(page);
+      console.log('PASS: '+name+' compact GIF survives reload for a password account');
       console.log('PASS: '+name+' authenticated rating, edit, persistence and community trending');
       await context.close();
     } finally { await browser.close(); }

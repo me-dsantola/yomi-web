@@ -23,6 +23,13 @@ import {
 } from '@/lib/backup/kuroCodec';
 import { cleanMangaDexId } from '@/lib/mangadex/api';
 
+function mediaFormat(value: string) {
+  if (value.startsWith('R0lGOD')) return 'gif';
+  if (value.startsWith('iVBOR')) return 'png';
+  if (value.startsWith('UklGR')) return 'webp';
+  return 'jpeg';
+}
+
 export interface ParsedYomiCloudState {
   uid: string;
   userEmail: string | null;
@@ -291,8 +298,8 @@ export function parseRawCloudDocData(
     rawPayload,
     backup,
     profile,
-    avatarDataUrl: avatarBase64 ? `data:image/jpeg;base64,${avatarBase64}` : null,
-    bannerDataUrl: bannerBase64 ? `data:image/jpeg;base64,${bannerBase64}` : null,
+    avatarDataUrl: avatarBase64 ? `data:image/${mediaFormat(avatarBase64)};base64,${avatarBase64}` : null,
+    bannerDataUrl: bannerBase64 ? `data:image/${mediaFormat(bannerBase64)};base64,${bannerBase64}` : null,
     favorites,
     recentReads,
     readingLists,
@@ -621,7 +628,8 @@ export async function saveCloudReadingLists(
 export async function updateCloudUserProfile(
   uid: string,
   userEmail: string | null,
-  profilePatch: Partial<YomiProfile>
+  profilePatch: Partial<YomiProfile>,
+  media?: {slot: 'avatar' | 'banner'; base64: string}
 ): Promise<void> {
   const { db } = getFirebaseClient();
   const ref = doc(db, 'users', uid);
@@ -662,10 +670,15 @@ export async function updateCloudUserProfile(
           readingListsCount: summary.readingListsCount,
         };
 
+    const mediaFields = media ? { [media.slot + 'Base64']: media.base64, [media.slot === 'avatar' ? 'hasCustomAvatar' : 'hasCustomBanner']: true } : {};
+    if (media && (media.base64.length > 88_000 || new Blob([JSON.stringify({...existingData, ...mediaFields, profile: nextProfile, payload: nextPayload})]).size > 900 * 1024)) {
+      throw new Error('O perfil atingiu o limite de sincronização. Reduza a imagem.');
+    }
     tx.set(
       ref,
       {
         ...baseFields,
+        ...mediaFields,
         payload: nextPayload,
         profile: nextProfile,
         userDisplayName:

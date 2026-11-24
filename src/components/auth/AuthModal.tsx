@@ -280,6 +280,7 @@ export function AuthModal({
           <div className="h-px flex-1 bg-white/10" />
         </div>
 
+        <p className="mb-3 text-center text-xs text-white/65">E-mail e senha incluem fotos e GIFs compactos. Você pode vincular o Google no perfil para guardar originais e backups no seu Drive.</p>
         {/* Google Sign-In */}
         <button
           type="button"

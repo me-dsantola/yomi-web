@@ -91,73 +91,10 @@ function MarqueeMangaCard({
           />
         </div>
 
-        {/* Subtle Default Title Strip (fades out when full hover overlay opens) */}
-        <div
-          aria-hidden="true"
-          className={`pointer-events-none absolute inset-x-0 bottom-0 z-[5] [transform:translateZ(0)] bg-gradient-to-t from-[#070709]/92 via-[#070709]/60 to-transparent px-3.5 pb-3 pt-10 transition-opacity duration-200 group-hover/card:opacity-0 group-focus-within/card:opacity-0 ${
-            isSelected ? 'opacity-0' : 'opacity-100'
-          }`}
-        >
-          <p className="font-display text-xs sm:text-sm font-bold text-white line-clamp-1 leading-snug">
-            {work.title}
-          </p>
-          {primaryGenres[0] && (
-            <p className="mt-0.5 text-[10px] font-medium text-white/60 truncate">
-              {primaryGenres[0].name}
-            </p>
-          )}
-        </div>
-
-        {/* Hover / Focus / Mobile-Tap Info Glass Overlay */}
-        <div
-          className={`pointer-events-none absolute inset-0 z-10 [transform:translateZ(0)] flex flex-col justify-end bg-gradient-to-t from-[#070709] via-[#070709]/88 to-transparent p-3.5 sm:p-5 transition-all duration-300 ease-out group-hover/card:opacity-100 group-hover/card:translate-y-0 group-focus-within/card:opacity-100 group-focus-within/card:translate-y-0 ${
-            isSelected
-              ? 'opacity-100 translate-y-0'
-              : 'opacity-0 translate-y-3'
-          }`}
-        >
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <span
-              className="inline-flex items-center rounded-full border border-white/15 bg-[#070709]/90 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/95"
-              style={{ borderColor: `${accent}66` }}
-            >
-              {work.featuredChapterLabel ?? 'Disponível'}
-            </span>
-            <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/20 bg-[#070709]/90 text-white">
-              <ArrowUpRight className="h-3.5 w-3.5" />
-            </span>
-          </div>
-
-          <h3 className="font-display text-sm sm:text-lg font-bold leading-snug tracking-tight text-white line-clamp-2">
-            {work.title}
-          </h3>
-
-          <p className="mt-0.5 text-[11px] font-medium text-white/60 truncate">
-            {work.author}
-            {work.year ? ` · ${work.year}` : ''}
-          </p>
-
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            {primaryGenres.map((tag) => (
-              <span
-                key={tag.id}
-                className="inline-flex items-center rounded-full border border-white/12 bg-white/[0.08] px-2 py-0.5 text-[10px] font-medium text-white/85"
-              >
-                {tag.name}
-              </span>
-            ))}
-          </div>
-
-          <p className="mt-2 text-[11px] leading-relaxed text-white/65 line-clamp-2">
-            {work.description}
-          </p>
-
-          {isSelected && (
-            <div className="mt-2.5 inline-flex items-center justify-between rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] font-semibold text-white">
-              <span>Toque novamente para abrir</span>
-              <span>→</span>
-            </div>
-          )}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-[linear-gradient(to_top,#09090df5_0%,#09090de8_75%,transparent_100%)] px-3 pb-3 pt-7 sm:px-4 sm:pb-4">
+          <h3 className="break-words font-display text-sm font-bold leading-tight text-white line-clamp-2 sm:text-base">{work.title}</h3>
+          <p className="mt-1 truncate text-[11px] text-white/75">{primaryGenres[0]?.name || work.author}</p>
+          {isSelected && <p className="mt-1 text-[11px] text-white">Toque para abrir →</p>}
         </div>
       </Link>
     </div>

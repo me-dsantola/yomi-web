@@ -285,26 +285,11 @@ export default function ExplorarPage() {
                           }}
                         />
                       </div>
-                      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 [transform:translateZ(0)] flex flex-wrap items-center gap-1.5 bg-gradient-to-t from-[#070709] via-[#070709]/85 to-transparent p-2.5 pt-10">
-                        <span className="inline-block rounded-md border border-white/10 bg-[#070709]/90 px-2 py-0.5 text-[10px] font-medium text-white/85">
-                          {work.status === "completed"
-                            ? "Completo"
-                            : "Em lançamento"}
-                        </span>
-                        {work.hasAvailableChapters === false && (
-                          <span className="inline-block rounded-md border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-200">
-                            Sem capítulos
-                          </span>
-                        )}
+                      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(to_top,#09090df5_0%,#09090de8_75%,transparent_100%)] px-3 pb-3 pt-7">
+                        <h2 className="break-words font-display text-sm font-bold leading-tight text-white line-clamp-2">{work.title}</h2>
+                        <p className="mt-1 truncate text-[11px] text-white/75">{work.author}</p>
                       </div>
-                    </div>
-                    <div className="flex flex-1 flex-col justify-between p-3">
-                      <h2 className="font-display text-xs sm:text-sm font-bold text-white line-clamp-2 group-hover:text-[var(--yomi-accent)] transition-colors">
-                        {work.title}
-                      </h2>
-                      <p className="mt-1 text-[11px] text-white/45 truncate">
-                        {work.author}
-                      </p>
+                      <span className="absolute left-2 top-2 rounded-md bg-black/80 px-2 py-1 text-[10px] text-white">{work.hasAvailableChapters === false ? "Sem capítulos" : work.status === "completed" ? "Completo" : "Em lançamento"}</span>
                     </div>
                   </Link>
                 </motion.div>

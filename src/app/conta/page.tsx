@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { ProfileStorage } from '@/components/auth/ProfileStorage';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
@@ -43,6 +44,7 @@ import {
 } from '@/lib/mangadex/api';
 import {
   BLOBATAR_EXPRESSIONS,
+  BLOBATAR_SHAPES,
   BlobatarCompanion,
 } from '@/components/brand/BlobatarCompanion';
 
@@ -59,6 +61,8 @@ export default function ContaDashboardPage() {
     useYomiAuth();
   const queryClient = useQueryClient();
 
+  const [media,setMedia] = useState<{uid:string;avatar?:string;banner?:string}>({uid:''});
+  const originals: {avatar?:string;banner?:string} = user && media.uid === user.uid ? media : {};
   const [demoMode, setDemoMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'recent' | 'favorites' | 'lists'>(
     'recent'
@@ -71,6 +75,9 @@ export default function ContaDashboardPage() {
   const [editBio, setEditBio] = useState('');
   const [editGenres, setEditGenres] = useState('');
   const [editMascotName, setEditMascotName] = useState('');
+  const [editShape,setEditShape] = useState('auto');
+  const [editAnimated,setEditAnimated] = useState(true);
+  const [editUseMascot,setEditUseMascot] = useState(true);
   const [editExpression, setEditExpression] = useState('happy');
   const [editAccentArgb, setEditAccentArgb] = useState(0xffff2a55);
   const [savingProfile, setSavingProfile] = useState(false);
@@ -117,6 +124,9 @@ export default function ContaDashboardPage() {
     setEditBio(p?.bio || '');
     setEditGenres(p?.favoriteGenre || 'Ação, Fantasia & Seinen');
     setEditMascotName(p?.blobatarName || cloudState?.mascotName || 'Kuro');
+    setEditShape(p?.blobatarShape || 'auto');
+    setEditAnimated(p?.blobatarAnimated !== false);
+    setEditUseMascot(p?.useBlobatarAsAvatar ?? !cloudState?.avatarDataUrl);
     setEditExpression(p?.blobatarExpression || 'happy');
     setEditAccentArgb(p?.customAccentColor ?? 0xffff2a55);
     setIsEditOpen(true);
@@ -136,6 +146,7 @@ export default function ContaDashboardPage() {
         favoriteGenre: editGenres.trim() || 'Ação, Fantasia & Seinen',
         blobatarName: editMascotName.trim() || 'Kuro',
         blobatarExpression: editExpression,
+        blobatarShape:editShape, blobatarAnimated:editAnimated, useBlobatarAsAvatar:editUseMascot,
         customAccentColor: editAccentArgb,
       });
       await queryClient.invalidateQueries({ queryKey: ['yomi-cloud-doc'] });
@@ -411,8 +422,8 @@ export default function ContaDashboardPage() {
             <div
               className="h-36 sm:h-44 w-full bg-cover bg-center relative"
               style={{
-                backgroundImage: cloudState.bannerDataUrl
-                  ? `url(${cloudState.bannerDataUrl})`
+                backgroundImage: (originals.banner || cloudState.bannerDataUrl)
+                  ? `url(${originals.banner || cloudState.bannerDataUrl})`
                   : `radial-gradient(circle at 20% 30%, ${profileAccent}44, #141424 60%, #070709)`,
               }}
             >
@@ -421,11 +432,11 @@ export default function ContaDashboardPage() {
 
             <div className="px-6 sm:px-8 pb-6 -mt-12 relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-6">
               <div className="flex flex-col sm:flex-row sm:items-end gap-5">
-                {cloudState.avatarDataUrl &&
+                {(originals.avatar || cloudState.avatarDataUrl) &&
                 !cloudState.profile.useBlobatarAsAvatar ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={cloudState.avatarDataUrl}
+                    src={originals.avatar || cloudState.avatarDataUrl || undefined}
                     alt={cloudState.profile.name || 'Avatar'}
                     className="h-24 w-24 rounded-3xl border-4 border-[#0E0E14] object-cover shadow-xl"
                   />
@@ -510,6 +521,7 @@ export default function ContaDashboardPage() {
               </div>
             </div>
 
+            {user && <ProfileStorage key={user.uid} user={user} state={cloudState} refresh={refetch} onMedia={(slot,url)=>setMedia(prev=>({...prev.uid === user.uid ? prev : {},uid:user.uid,[slot]:url}))}/>}
             {/* Counter Strip */}
             <div className="grid grid-cols-3 border-t border-white/[0.07] bg-black/20 divide-x divide-white/[0.07] text-center py-3.5">
               <div>
@@ -951,7 +963,8 @@ export default function ContaDashboardPage() {
             <div className="flex items-center gap-4 rounded-2xl border border-white/[0.07] bg-black/30 p-4">
               <BlobatarCompanion
                 context="profile"
-                animated={cloudState?.profile?.blobatarAnimated !== false}
+                animated={editAnimated}
+                shape={editShape}
                 mascotName={editMascotName || 'Kuro'}
                 expression={editExpression}
                 accentColor={argbIntToHex(editAccentArgb)}
@@ -1071,6 +1084,11 @@ export default function ContaDashboardPage() {
                 </div>
               </div>
 
+              <label className="block text-sm">Silhueta do mascote
+                <select className="ml-3 rounded-lg bg-zinc-900 p-2" value={editShape} onChange={e=>setEditShape(e.target.value)}>{BLOBATAR_SHAPES.map(s=><option key={s.id} value={s.id}>{s.label}</option>)}</select>
+              </label>
+              <label className="block text-sm"><input type="checkbox" checked={editAnimated} onChange={e=>setEditAnimated(e.target.checked)}/> Animar mascote</label>
+              <label className="block text-sm"><input type="checkbox" checked={editUseMascot} onChange={e=>setEditUseMascot(e.target.checked)}/> Usar mascote como foto</label>
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
