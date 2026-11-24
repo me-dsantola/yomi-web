@@ -99,6 +99,8 @@ function ResilientReaderImage({
 }
 
 export default function QuickReaderPage() {
+  const [hasHydrated, setHasHydrated] = useState(false);
+  useEffect(() => { setHasHydrated(true); }, []);
   const params = useParams<{ chapterId: string }>();
   const chapterId = String(params?.chapterId ?? "");
   const prefersReducedMotion = useReducedMotion();
@@ -129,7 +131,7 @@ export default function QuickReaderPage() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["mangadex-chapter-pages", chapterId],
     queryFn: () => fetchChapterMetaAndPages(chapterId),
-    enabled: Boolean(chapterId),
+    enabled: hasHydrated && Boolean(chapterId),
     staleTime: 60_000,
     retry: 2,
   });
@@ -486,7 +488,7 @@ export default function QuickReaderPage() {
     toggleFullscreen,
   ]);
 
-  if (isLoading) {
+  if (!hasHydrated || isLoading) {
     return (
       <div className="min-h-dvh bg-[#070709] flex flex-col items-center justify-center p-4 text-center space-y-3">
         <BlobatarCompanion context="reader" loading expression="thinking" size={64} interactiveCycle={false} followPointer={false} />
