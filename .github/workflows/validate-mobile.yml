@@ -33,6 +33,7 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run typecheck
+      - run: node tests/mobile/diagnose-hydration.mjs
       - run: npm run build
       - name: Install browser validation tools
         run: |
