@@ -13,7 +13,7 @@ import {
   type Auth,
   type User,
 } from 'firebase/auth';
-import { connectFirestoreEmulator, getFirestore, type Firestore } from 'firebase/firestore';
+import { connectFirestoreEmulator, getFirestore, initializeFirestore, type Firestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey:
@@ -55,7 +55,9 @@ export function getFirebaseClient(): {
     if (useLocalEmulators()) connectAuthEmulator(authInstance, 'http://127.0.0.1:9099', { disableWarnings: true });
   }
   if (!dbInstance) {
-    dbInstance = getFirestore(appInstance);
+    dbInstance = useLocalEmulators()
+      ? initializeFirestore(appInstance, { experimentalForceLongPolling: true })
+      : getFirestore(appInstance);
     if (useLocalEmulators()) connectFirestoreEmulator(dbInstance, '127.0.0.1', 8780);
   }
   return { app: appInstance, auth: authInstance, db: dbInstance };
