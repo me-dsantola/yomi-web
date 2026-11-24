@@ -34,7 +34,7 @@ async function fixture(context) {
     if(url.pathname=== '/api/md/manga') return route.fulfill({json:{data:[work],total:1}});
     return route.fulfill({json:{data:work}});
   });
-  await context.route(url => /\\.(png|jpe?g|webp|svg)$/.test(url.pathname) || ['/api/cover','/api/page'].includes(url.pathname), route => route.fulfill({contentType:'image/svg+xml',body:image}));
+  await context.route(url => /\.(png|jpe?g|webp|svg)$/.test(url.pathname) || ['/api/cover','/api/page'].includes(url.pathname), route => route.fulfill({contentType:'image/svg+xml',body:image}));
 }
 async function noOverflow(page) {
   const sizes=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));
