@@ -121,7 +121,7 @@ export function AuthModal({
           </h2>
           <p className="text-xs text-white/55">
             {mode === 'login'
-              ? 'Entre para comentar, favoritar e sincronizar na nuvem.'
+              ? 'Entre para avaliar, comentar e sincronizar sua biblioteca.'
               : 'Salve sua biblioteca, progresso e comentários em qualquer aparelho.'}
           </p>
         </div>
