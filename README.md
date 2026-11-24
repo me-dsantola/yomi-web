@@ -41,6 +41,8 @@ Cada conta pode atribuir uma nota inteira de 1 a 5 e alterá-la. A nota média e
 
 O ranking usa `(soma das notas + 3,5 × 5) / (quantidade de votos + 5)`. Isso equilibra notas e volume de avaliações. O desempate considera a quantidade de votos e o ID da obra. A vitrine pública usa obras classificadas como safe ou suggestive. Sem avaliações disponíveis, mostra destaques editoriais com identificação própria.
 
+As notas da comunidade são independentes das notas MangaDex disponíveis no catálogo.
+
 Os votos individuais só podem ser lidos pela própria conta; os totais são públicos.
 
 ## Publicação
