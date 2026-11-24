@@ -39,7 +39,7 @@ export function WorkRating({ workId }: { workId: string }) {
   const count = summary.data?.count ?? 0;
   const average = count > 0 ? (summary.data!.total / count).toFixed(1).replace('.', ',') : null;
   return (
-    <section aria-label="Avaliação da comunidade" className="rounded-2xl border border-white/10 max-w-md bg-gradient-to-br from-amber-300/[0.07] to-white/[0.025] p-4 space-y-3">
+    <section aria-label="Avaliação da comunidade" className="rounded-2xl border border-white/10 max-w-md bg-gradient-to-br from-amber-300/[0.07] to-white/[0.025] px-2 py-4 sm:px-4 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-sm font-semibold text-white/90">Avaliação da comunidade</span>
         <span className="rounded-full bg-white/[0.06] px-3 py-1 text-xs tabular-nums text-white/75" aria-live="polite">
