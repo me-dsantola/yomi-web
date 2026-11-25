@@ -730,6 +730,7 @@ export async function toggleChapterReadInCloud(
         ...(decoded.history ?? {}),
       };
       nextHistory[`read_${chapter.id}`] = false;
+      nextHistory[`reading_metric_${chapter.id}`] = { changedAt: new Date().toISOString() };
       const nextBackup = stripEphemeralCacheForCloud({
         ...decoded,
         version: decoded.version ?? CURRENT_BACKUP_VERSION,

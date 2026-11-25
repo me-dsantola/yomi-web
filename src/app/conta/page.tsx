@@ -2,6 +2,8 @@
 
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { ReaderMetricsSection } from '@/components/profile/ReaderMetricsSection';
+import { calculateReaderMetrics } from '@/lib/backup/readerMetrics';
 import { ProfileStorage } from '@/components/auth/ProfileStorage';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -245,6 +247,8 @@ export default function ContaDashboardPage() {
       ? parsed
       : ['Ação', 'Fantasia', 'Romance', 'Seinen'];
   }, [cloudState?.profile?.favoriteGenre]);
+
+  const metrics = useMemo(() => cloudState ? calculateReaderMetrics(cloudState.backup) : null, [cloudState]);
 
   const readChaptersCount = useMemo(
     () =>
@@ -572,6 +576,11 @@ export default function ContaDashboardPage() {
               </div>
             </div>
           </div>
+
+          {metrics && <ReaderMetricsSection metrics={metrics} profile={cloudState.profile}
+            name={cloudState.profile.name || 'Leitor Yomi'} rank={getReaderRankInfo(metrics.chapters).title}
+            avatar={cloudState.profile.useBlobatarAsAvatar ? null : originals.avatar || cloudState.avatarDataUrl}
+            accent={profileAccent} />}
 
           {/* Reader Rank + Favorite Genres Row */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4">

@@ -241,6 +241,13 @@ function validateHistoryEntry(key: string, value: unknown): void {
     if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
       invalid(key);
     }
+  } else if (key.startsWith('reading_metric_')) {
+    const event = ensureMap(value, key);
+    if (typeof event.changedAt !== 'string') invalid(key);
+    for (const field of ['readAt', 'mangaId', 'number']) {
+      optionalCheck(event, field, v => typeof v === 'string');
+    }
+    optionalCheck(event, 'pages', isNonNegativeInt);
   } else if (key.startsWith('read_')) {
     if (typeof value !== 'boolean') invalid(key);
   } else if (key.startsWith('last_')) {
@@ -535,6 +542,15 @@ export function mergeHistoryIntoPayload(
 
   existingHistory[`page_${chapterId}`] = Math.max(0, Math.floor(pageNum));
   if (update.completed) {
+    const metricKey = `reading_metric_${chapterId}`;
+    const previous = existingHistory[metricKey];
+    if (existingHistory[`read_${chapterId}`] !== true ||
+        (isPlainObject(previous) && !previous.readAt)) {
+      existingHistory[metricKey] = {
+        changedAt: nowIso, readAt: nowIso, mangaId,
+        pages: isNonNegativeInt(update.chapter.pages) ? update.chapter.pages : 0, number: update.chapter.chapterNumber,
+      };
+    }
     existingHistory[`read_${chapterId}`] = true;
   }
   existingHistory[`last_${mangaId}`] = update.chapter;

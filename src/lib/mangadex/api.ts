@@ -1205,6 +1205,8 @@ export async function fetchChapterMetaAndPages(
     mangaId?: string;
     mangaTitle?: string;
     mangaCoverFileName?: string;
+    mangaGenres?: string[];
+    mangaIsNsfw?: boolean;
   };
 }> {
   const cleanChapterId = cleanMangaDexId(chapterId);
@@ -1241,6 +1243,8 @@ export async function fetchChapterMetaAndPages(
     ? resolveBestTitle(mangaRel.attributes)
     : undefined;
   let mangaCoverFileName: string | undefined;
+  let mangaGenres: string[] | undefined;
+  let mangaIsNsfw: boolean | undefined;
 
   if (mangaId && isUuid(mangaId)) {
     try {
@@ -1262,7 +1266,16 @@ export async function fetchChapterMetaAndPages(
             mangaCoverFileName = fileName;
           }
           if (mangaData.attributes) {
-            mangaTitle = resolveBestTitle(mangaData.attributes);
+            const attributes = mangaData.attributes;
+            mangaTitle = resolveBestTitle(attributes);
+            if (Array.isArray(attributes.tags)) {
+              mangaGenres = attributes.tags.filter((tag: { attributes?: { group?: string; name?: Record<string, string> } }) => tag.attributes?.group === 'genre')
+                .map((tag: { attributes?: { group?: string; name?: Record<string, string> } }) => tag.attributes?.name?.['pt-br'] || tag.attributes?.name?.en || '')
+                .filter(Boolean);
+            }
+            if (typeof attributes.contentRating === 'string') {
+              mangaIsNsfw = ['erotica', 'pornographic'].includes(attributes.contentRating);
+            }
           }
         }
       }
@@ -1294,6 +1307,8 @@ export async function fetchChapterMetaAndPages(
       mangaId,
       mangaTitle,
       mangaCoverFileName,
+      mangaGenres,
+      mangaIsNsfw,
     },
   };
 }

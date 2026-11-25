@@ -417,6 +417,8 @@ export default function QuickReaderPage() {
             title: data.chapterInfo.mangaTitle || "Obra",
             source: "mangadex",
             coverFileName: data.chapterInfo.mangaCoverFileName,
+            ...(data.chapterInfo.mangaGenres && { readingGenres: data.chapterInfo.mangaGenres }),
+            ...(data.chapterInfo.mangaIsNsfw !== undefined && { isNsfw: data.chapterInfo.mangaIsNsfw }),
           },
           chapter: {
             id: chapterId,

@@ -55,6 +55,8 @@ function toCloudMangaEntry(work: MangaDexWork): YomiMangaEntry {
     status: work.status,
     source: 'mangadex',
     tags: work.tags.map((t) => t.name),
+    isNsfw: ['erotica', 'pornographic'].includes(work.contentRating),
+    ...(work.availableChaptersCount !== undefined && { availableChaptersCount: work.availableChaptersCount }),
   };
   if (work.coverFileName) {
     entry.coverFileName = work.coverFileName;
