@@ -26,7 +26,10 @@ export function YomiBloubCompanion(props: YomiBloubCompanionProps) {
  useEffect(() => { setMounted(true); }, []);
  if (!mounted) {
   const size = props.size ?? 160;
-  return <div aria-hidden="true" style={{width:size,height:size}} />;
+  return <svg width={size} height={size} viewBox="0 0 80 80" role="img" aria-label={props.label || 'Kuro'}>
+    <path fill="#9993dd" d="M10 46C9 27 22 13 39 12c19-1 32 15 32 33 0 14-11 23-30 23-19 0-30-7-31-22Z"/>
+    <g fill="#151526"><ellipse cx="31" cy="38" rx="3" ry="5"/><ellipse cx="49" cy="38" rx="3" ry="5"/></g>
+  </svg>;
  }
  return <MountedYomiBloubCompanion {...props} />;
 }

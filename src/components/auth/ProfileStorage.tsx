@@ -59,6 +59,11 @@ export function ProfileStorage({ user, state, refresh, onMedia }: Props) {
   const [drive, setDrive] = useState<Awaited<
     ReturnType<typeof connectProfileDrive>
   > | null>(null);
+  const [linked, setLinked] = useState(false);
+  useEffect(() => {
+    try { setLinked(localStorage.getItem('yomi-drive-linked:' + user.uid) === '1'); } catch {}
+    try { setStatus(localStorage.getItem('yomi-drive-warning:' + user.uid) || ''); } catch {}
+  }, [user.uid]);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('');
   const urls = useRef<string[]>([]);
@@ -87,14 +92,16 @@ export function ProfileStorage({ user, state, refresh, onMedia }: Props) {
   async function connect() {
     const session = await connectProfileDrive(user);
     setDrive(session);
-    return 'Drive conectado.';
+    setLinked(true);
+    try { localStorage.setItem('yomi-drive-linked:' + user.uid, '1'); } catch {}
+    return session;
   }
   async function loadOriginals() {
-    if (!drive) return 'Conecte o Drive.';
+    const connected = drive ?? await connect();
     let found = false;
     await Promise.all(
       (['avatar', 'banner'] as const).map(async (slot) => {
-        const blob = await drive.read(slot);
+        const blob = await connected.read(slot);
         if (blob) {
           show(slot, blob);
           found = true;
@@ -106,18 +113,42 @@ export function ProfileStorage({ user, state, refresh, onMedia }: Props) {
   async function upload(slot: Slot, file: File) {
     if (file.size > 16 * 1024 * 1024)
       throw new Error('Escolha uma imagem de até 16 MiB.');
+    const connection = drive ? Promise.resolve(drive) : linked ? connect() : null;
+    // Handle a dismissed popup while the compact image is being prepared.
+    const attempt = connection?.then(session => ({session}), (error: unknown) => ({error}));
     const small = await preview(file, slot);
-    if (drive) await drive.save(slot, file);
+    let warning = '';
+    let archived = false;
+    if (attempt) {
+      try {
+        const result = await attempt;
+        if ('error' in result) throw result.error;
+        await result.session.save(slot, file);
+        archived = true;
+      } catch (error) {
+        warning = error instanceof Error ? error.message : 'Drive indisponível.';
+      }
+    }
+    try {
     await updateCloudUserProfile(
       user.uid,
       user.email,
       slot === 'avatar' ? { useBlobatarAsAvatar: false } : {},
       { slot, base64: small.split(',')[1] },
     );
+    } catch (error) {
+      throw new Error([warning, archived ? 'Original salvo no Drive.' : '', error instanceof Error ? error.message : 'Falha ao sincronizar.'].filter(Boolean).join(' '));
+    }
     await refresh();
-    if (drive) show(slot, file);
+    if (archived) show(slot, file);
     else onMedia(slot, small);
-    return drive
+    const warningKey = 'yomi-drive-warning:' + user.uid;
+    try {
+      if (warning) localStorage.setItem(warningKey, warning + ' Imagem compacta salva no perfil.');
+      else if (archived) localStorage.removeItem(warningKey);
+    } catch {}
+    if (warning) return warning + ' Imagem compacta salva no perfil.';
+    return archived
       ? 'Original salvo no Drive e prévia sincronizada.'
       : 'Imagem compacta salva.';
   }
@@ -132,8 +163,8 @@ export function ProfileStorage({ user, state, refresh, onMedia }: Props) {
         até 16 MiB e backups no seu Drive.
       </p>
       <fieldset disabled={busy} className="flex flex-wrap gap-2">
-        <button className={button} onClick={() => void run(connect)}>
-          {drive ? 'Reconectar Drive' : 'Conectar Google Drive'}
+        <button className={button} onClick={() => void run(async () => { await connect(); return 'Drive conectado.'; })}>
+          {drive ? 'Reconectar Drive' : linked ? 'Drive vinculado · renovar acesso' : 'Conectar Google Drive'}
         </button>
         {(['avatar', 'banner'] as const).map((slot) => (
           <label
@@ -154,7 +185,7 @@ export function ProfileStorage({ user, state, refresh, onMedia }: Props) {
             />
           </label>
         ))}
-        {drive && (
+        {(linked || drive) && (
           <>
             <button className={button} onClick={() => void run(loadOriginals)}>
               Usar originais do Drive
@@ -163,12 +194,23 @@ export function ProfileStorage({ user, state, refresh, onMedia }: Props) {
               className={button}
               onClick={() =>
                 void run(async () => {
-                  await drive.save(
+                  try {
+                  const connected = drive ?? await connect();
+                  await connected.save(
                     'backup',
                     new Blob([state.rawPayload], {
                       type: 'application/octet-stream',
                     }),
                   );
+                  } catch (error) {
+                    const url = URL.createObjectURL(new Blob([state.rawPayload]));
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'yomi-backup.kuro';
+                    link.click();
+                    setTimeout(() => URL.revokeObjectURL(url), 30000);
+                    return (error instanceof Error ? error.message : 'Drive indisponível.') + ' Download da cópia local iniciado.';
+                  }
                   return 'Backup salvo no Drive.';
                 })
               }
@@ -179,7 +221,8 @@ export function ProfileStorage({ user, state, refresh, onMedia }: Props) {
               className={button}
               onClick={() =>
                 void run(async () => {
-                  const blob = await drive.read('backup');
+                  const connected = drive ?? await connect();
+                  const blob = await connected.read('backup');
                   if (!blob) return 'Nenhum backup no Drive.';
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement('a');

@@ -9,7 +9,7 @@ import {
   BookOpen,
   Clock,
   Cloud,
-  Edit3,
+  Edit3, Settings, Share2,
   Eye,
   FolderHeart,
   HardDriveDownload,
@@ -68,6 +68,8 @@ export default function ContaDashboardPage() {
     useYomiAuth();
   const queryClient = useQueryClient();
 
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [shareLink, setShareLink] = useState('');
   const [media,setMedia] = useState<{uid:string;avatar?:string;banner?:string}>({uid:''});
   const originals: {avatar?:string;banner?:string} = user && media.uid === user.uid ? media : {};
   const [demoMode, setDemoMode] = useState(false);
@@ -397,7 +399,7 @@ export default function ContaDashboardPage() {
       {cloudState && (
         <>
           {/* Notice when account has not synced yet from Android or web writes */}
-          {user && !cloudState.updatedAtLocal && (
+          {settingsOpen && user && !cloudState.updatedAtLocal && (
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#0E0E14] px-5 py-3.5 text-xs text-white/70">
               <span>
                 Sua conta já está pronta na Web! Você também pode enviar seus
@@ -491,8 +493,25 @@ export default function ContaDashboardPage() {
                 </div>
               </div>
 
+              <div className="flex items-center gap-4">
+                <button aria-label="Configurações do perfil" aria-expanded={settingsOpen} onClick={() => setSettingsOpen(!settingsOpen)} className="rounded-full border border-white/15 p-2.5"><Settings size={18}/></button>
+                <button className="inline-flex items-center gap-2 text-sm" onClick={async () => {
+                  const url = new URL('/perfil', window.location.origin);
+                  url.hash = new URLSearchParams({
+                    nome: (cloudState.profile.name || 'Leitor Yomi').slice(0,80),
+                    bio: (cloudState.profile.bio || '').slice(0,240),
+                    cor: profileAccent,
+                  }).toString();
+                  setShareLink(url.href);
+                  try {
+                    if (navigator.share) await navigator.share({title:'Perfil Yomi Reader', url:url.href});
+                    else { await navigator.clipboard.writeText(url.href); setFeedback('Link do perfil copiado.'); }
+                  } catch { /* Link available for manual copy. */ }
+                }}><Share2 size={16}/> Compartilhar perfil</button>
+              </div>
+              {shareLink && <label className="text-xs text-white/65">Link com nome, bio e cor atuais <input readOnly value={shareLink} onFocus={e => e.target.select()} className="rounded bg-white/10 p-2" /></label>}
               {/* Actions */}
-              <div className="flex flex-wrap items-center justify-center gap-2.5">
+              <div style={{display:settingsOpen ? undefined : 'none'}} className="flex flex-wrap items-center justify-center gap-2.5">
                 <button
                   type="button"
                   onClick={openEditProfile}
@@ -528,7 +547,7 @@ export default function ContaDashboardPage() {
               </div>
             </div>
 
-            {user && <ProfileStorage key={user.uid} user={user} state={cloudState} refresh={refetch} onMedia={(slot,url)=>setMedia(prev=>({...prev.uid === user.uid ? prev : {},uid:user.uid,[slot]:url}))}/>}
+            {user && <div hidden={!settingsOpen}><ProfileStorage key={user.uid} user={user} state={cloudState} refresh={refetch} onMedia={(slot,url)=>setMedia(prev=>({...prev.uid === user.uid ? prev : {},uid:user.uid,[slot]:url}))}/></div>}
             {/* Counter Strip */}
             <div className="grid grid-cols-3 border-t border-white/[0.07] bg-black/20 divide-x divide-white/[0.07] text-center py-3.5">
               <div>

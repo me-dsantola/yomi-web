@@ -90,7 +90,7 @@
   overflow: hidden;
   isolation: isolate;
   border: 1px solid rgb(255 255 255 / 8%);
-  transition: border-color .3s ease, box-shadow .3s ease;
+  transition: transform .22s ease, border-color .3s ease, box-shadow .3s ease;
 }
 
 .yomi-work-cover {
@@ -115,6 +115,10 @@
 }
 
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .yomi-work-card:hover, .yomi-floating-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 14px 30px rgb(0 0 0 / 38%);
+  }
   .yomi-work-card:hover .yomi-work-cover { transform: scale(1.02); }
 }
 

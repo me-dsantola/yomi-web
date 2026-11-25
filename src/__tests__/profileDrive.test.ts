@@ -49,6 +49,17 @@ describe('Private Drive storage', () => {
     expect(body).toContain('yomi-reader-avatar');
     expect(body).toContain('GIF89a');
   });
+  it('reports a full Drive before attempting the upload', async () => {
+    const user = { uid: 'reader', providerData: [] } as unknown as User;
+    session.link.mockResolvedValue({user});
+    const fetch = vi.fn().mockResolvedValue(Response.json({
+      error: {errors: [{reason:'storageQuotaExceeded'}]},
+    }, {status:403}));
+    vi.stubGlobal('fetch', fetch);
+    const drive = await connectProfileDrive(user);
+    await expect(drive.save('avatar', new Blob(['photo']))).rejects.toThrow('Google Drive está cheio');
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
   it('updates an existing backup and stops using the session after an account change', async () => {
     const user = {
       uid: 'reader',

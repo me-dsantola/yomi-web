@@ -34,12 +34,16 @@ class ProfileDrive {
       ...init,
       headers: { ...init.headers, Authorization: 'Bearer ' + this.token },
     });
-    if (!response.ok)
+    if (!response.ok) {
+      const detail = await response.json().catch(() => null);
+      if (detail?.error?.errors?.some((item: {reason?: string}) => item.reason === 'storageQuotaExceeded'))
+        throw new Error('Seu Google Drive está cheio.');
       throw new Error(
         response.status === 401
           ? 'A sessão expirou. Reconecte o Drive.'
           : 'O Drive recusou a operação. Confira a permissão e o espaço disponível.',
       );
+    }
     return response;
   }
 

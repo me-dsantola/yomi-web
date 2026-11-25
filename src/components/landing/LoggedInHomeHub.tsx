@@ -496,7 +496,7 @@ export function LoggedInHomeHub({
                       recentReads.length > 1
                         ? 'snap-start min-w-[275px] max-w-[320px] sm:min-w-[300px] md:min-w-0 md:max-w-none'
                         : ''
-                    } h-full flex flex-col justify-between gap-3 rounded-2xl border border-white/[0.08] bg-[#0E0E14] p-3.5 sm:p-4 transition duration-200 hover:-translate-y-0.5 hover:border-white/20 motion-reduce:hover:translate-y-0`}
+                    } h-full flex flex-col justify-between gap-3 rounded-2xl border border-white/[0.08] bg-[#0E0E14] p-3.5 sm:p-4 transition duration-200 yomi-floating-card hover:border-white/20 motion-reduce:hover:translate-y-0`}
                   >
                     <div className="flex items-start gap-3.5 min-w-0">
                       <Link
@@ -650,7 +650,7 @@ export function LoggedInHomeHub({
                     favorites.length > 2
                       ? 'snap-start w-[155px] shrink-0 sm:w-auto sm:shrink'
                       : ''
-                  } group relative flex flex-col rounded-2xl border border-white/[0.08] bg-[#0E0E14] overflow-hidden transform-gpu [backface-visibility:hidden] transition duration-200 hover:-translate-y-0.5 hover:border-white/25 motion-reduce:hover:translate-y-0`}
+                  } group relative flex flex-col rounded-2xl border border-white/[0.08] bg-[#0E0E14] overflow-hidden transform-gpu [backface-visibility:hidden] transition duration-200 yomi-floating-card hover:border-white/25 motion-reduce:hover:translate-y-0`}
                 >
                   {/* Botão de remover favorito com proteção contra clique acidental */}
                   <button
@@ -707,7 +707,7 @@ export function LoggedInHomeHub({
                         className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#070709]/85 via-[#070709]/30 to-transparent"
                       />
                       {chapterBadge && (
-                        <span className="absolute bottom-2 left-2.5 z-10 rounded-full border border-white/15 bg-[#070709]/85 px-2 py-0.5 text-[10px] font-medium text-white/85">
+                        <span className="absolute bottom-2 left-2.5 z-10 drop-shadow-md text-[10px] font-medium text-white/85">
                           {chapterBadge}
                         </span>
                       )}
@@ -783,7 +783,7 @@ export function LoggedInHomeHub({
                 <Link
                   key={work.id}
                   href={buildWorkHref(work.id, work.title)}
-                  className="snap-start w-[178px] shrink-0 sm:w-auto sm:shrink group flex flex-col rounded-2xl border border-white/[0.08] bg-[#0E0E14] overflow-hidden transform-gpu [backface-visibility:hidden] transition duration-200 hover:-translate-y-0.5 hover:border-white/25 motion-reduce:hover:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                  className="snap-start w-[178px] shrink-0 sm:w-auto sm:shrink group flex flex-col rounded-2xl border border-white/[0.08] bg-[#0E0E14] overflow-hidden transform-gpu [backface-visibility:hidden] transition duration-200 yomi-floating-card hover:border-white/25 motion-reduce:hover:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
                 >
                   <div className="relative aspect-[3/4.2] w-full overflow-hidden bg-white/5 [transform:translateZ(0)]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -802,7 +802,7 @@ export function LoggedInHomeHub({
                       aria-hidden="true"
                       className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#070709]/90 via-[#070709]/35 to-transparent"
                     />
-                    <span className="absolute bottom-2.5 left-2.5 right-2.5 z-10 inline-flex items-center truncate rounded-full border border-white/15 bg-[#070709]/85 px-2.5 py-0.5 text-[10px] font-medium text-white/90">
+                    <span className="absolute bottom-2.5 left-2.5 right-2.5 z-10 inline-flex items-center truncate drop-shadow-md text-[10px] font-medium text-white/90">
                       <span className="truncate">{reasonLabel}</span>
                     </span>
                   </div>
@@ -854,7 +854,7 @@ export function LoggedInHomeHub({
                 <Link
                   key={work.id}
                   href={buildWorkHref(work.id, work.title)}
-                  className="snap-start w-[178px] shrink-0 sm:w-auto sm:shrink group flex flex-col rounded-2xl border border-white/[0.08] bg-[#0E0E14] overflow-hidden transform-gpu [backface-visibility:hidden] transition duration-200 hover:-translate-y-0.5 hover:border-white/25 motion-reduce:hover:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                  className="snap-start w-[178px] shrink-0 sm:w-auto sm:shrink group flex flex-col rounded-2xl border border-white/[0.08] bg-[#0E0E14] overflow-hidden transform-gpu [backface-visibility:hidden] transition duration-200 yomi-floating-card hover:border-white/25 motion-reduce:hover:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
                 >
                   <div className="relative aspect-[3/4.2] w-full overflow-hidden bg-white/5 [transform:translateZ(0)]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}

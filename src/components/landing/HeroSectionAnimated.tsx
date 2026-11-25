@@ -229,7 +229,7 @@ export function HeroSectionAnimated({
                     <BlobatarCompanion
                 context="welcome"
                       seed="YOMI"
-                      mascotName="Yomi"
+                      mascotName="Kuro"
                       size={84}
                       followPointer
                       interactiveCycle

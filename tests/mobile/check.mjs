@@ -57,6 +57,7 @@ try {
           await routePage.waitForTimeout(300);
           assert.deepEqual(routeErrors,[], 'Page hydration: '+route);
           await noOverflow(routePage);
+          if (route === '/explorar') await routePage.locator('svg[aria-label="Mascote Kuro"] path[d]').first().waitFor({state:'attached'});
           if (route.startsWith('/obra/')) {
             const stars = routePage.getByRole('region', {name:'Avaliação da comunidade'}).getByRole('button', {name:/Avaliar com/});
             await stars.first().waitFor();
@@ -120,12 +121,19 @@ try {
       await noOverflow(page);
       await page.screenshot({path:'test-results/mobile/'+name+'-community-ranking.png'});
       await page.goto(base+'/conta');
+      await page.getByRole('button',{name:'Configurações do perfil'}).click();
       const gif = 'R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
       await page.getByLabel('Alterar foto',{exact:true}).setInputFiles({name:'avatar.gif',mimeType:'image/gif',buffer:Buffer.from(gif,'base64')});
       await page.getByText('Imagem compacta salva.',{exact:true}).waitFor();
       await page.reload();
       await page.locator('img[src^="data:image/gif;base64,"]').first().waitFor();
       await noOverflow(page);
+      const visitor = await browser.newContext();
+      const card = await visitor.newPage();
+      await card.goto(base+'/perfil#nome=Leitora&bio=Meu+perfil&cor=%238B5CF6');
+      await card.getByRole('heading',{name:'Leitora',exact:true}).waitFor();
+      await card.getByText('Meu perfil',{exact:true}).waitFor();
+      await visitor.close();
       console.log('PASS: '+name+' compact GIF survives reload for a password account');
       console.log('PASS: '+name+' authenticated rating, edit, persistence and community trending');
       await context.close();

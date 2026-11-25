@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { BlobatarCompanion } from "@/components/brand/BlobatarCompanion";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
@@ -87,7 +88,7 @@ export default function ExplorarPage() {
             Catálogo Web • +50.000 Obras
           </span>
           <h1 className="font-display text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
-            Explorar Acervo
+            <span className="inline-flex items-center gap-3">Explorar Acervo <BlobatarCompanion context="library" size={48} /></span>
           </h1>
         </div>
 
@@ -251,23 +252,10 @@ export default function ExplorarPage() {
             className="space-y-10"
           >
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4 sm:gap-5">
-              {works.map((work, idx) => (
-                <motion.div
-                  key={work.id}
-                  initial={{ opacity: 0, y: 36, scale: 0.96 }}
-                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                  viewport={{
-                    once: true,
-                    amount: 0.1,
-                    margin: "0px 0px -24px 0px",
-                  }}
-                  transition={{
-                    duration: 0.45,
-                    delay: (idx % 8) * 0.035,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
-                >
+              {works.map((work) => (
                   <Link
+                    key={work.id}
+                    prefetch={false}
                     href={buildWorkHref(work.id, work.title)}
                     className="yomi-work-card flex h-full flex-col rounded-2xl bg-[#0E0E14]"
                   >
@@ -285,14 +273,13 @@ export default function ExplorarPage() {
                           }}
                         />
                       </div>
-                      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(to_top,#09090df5_0%,#09090de8_75%,transparent_100%)] px-3 pb-3 pt-7">
-                        <h2 className="break-words font-display text-sm font-bold leading-tight text-white line-clamp-2">{work.title}</h2>
-                        <p className="mt-1 truncate text-[11px] text-white/75">{work.author}</p>
-                      </div>
-                      <span className="absolute left-2 top-2 rounded-md bg-black/80 px-2 py-1 text-[10px] text-white">{work.hasAvailableChapters === false ? "Sem capítulos" : work.status === "completed" ? "Completo" : "Em lançamento"}</span>
+                    </div>
+                    <div className="px-2.5 py-3">
+                      <h2 className="line-clamp-2 text-sm font-semibold leading-tight">{work.title}</h2>
+                      <p className="mt-1 truncate text-xs text-white/55">{work.author}</p>
+                      <p className="mt-1 text-[10px] text-white/45">{work.hasAvailableChapters === false ? "Sem capítulos" : work.status === "completed" ? "Completo" : "Em lançamento"}</p>
                     </div>
                   </Link>
-                </motion.div>
               ))}
             </div>
 
