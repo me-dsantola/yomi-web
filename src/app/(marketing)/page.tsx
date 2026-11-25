@@ -10,6 +10,8 @@ import { LoggedInHomeHub } from '@/components/landing/LoggedInHomeHub';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
+  title: { absolute: 'Yomi Reader | Leitor de mangás, manhwas e webtoons' },
+  description: 'Leia mangás, manhwas e webtoons no Yomi Reader pelo navegador ou pelo app Android, com biblioteca sincronizada.',
   alternates: { canonical: '/' },
   verification: { google: 'LDWlRQxPw6gDqnCeT_Lj6nQc6CKAKxhjnfxMfFlYjBI' },
 };

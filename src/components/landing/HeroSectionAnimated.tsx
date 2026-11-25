@@ -85,7 +85,7 @@ export function HeroSectionAnimated({
               </h1>
 
               <p className="max-w-lg text-base sm:text-lg leading-relaxed text-white/60">
-                Mais de 50.000 obras em alta definição, leitura contínua ou paginada e biblioteca sincronizada.
+                No Yomi Reader, explore mais de 50.000 obras em alta definição, leitura contínua ou paginada e biblioteca sincronizada.
               </p>
             </div>
 
