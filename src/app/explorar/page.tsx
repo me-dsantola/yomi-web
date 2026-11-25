@@ -19,7 +19,7 @@ import {
 import { CURATED_POPULAR_WORKS } from "@/lib/mangadex/curatedCatalog";
 import { POPULAR_MANGADEX_TAGS } from "@/lib/mangadex/types";
 
-const PAGE_SIZE = 48;
+const PAGE_SIZE = 96;
 
 export default function ExplorarPage() {
   const [searchInput, setSearchInput] = useState("");
