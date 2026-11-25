@@ -11,6 +11,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   alternates: { canonical: '/' },
+  verification: { google: 'LDWlRQxPw6gDqnCeT_Lj6nQc6CKAKxhjnfxMfFlYjBI' },
 };
 
 export default async function HomePage() {
