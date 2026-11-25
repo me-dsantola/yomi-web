@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
+import { siteUrl } from "@/lib/siteUrl";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { YomiNavbar } from "@/components/layout/YomiNavbar";
 import { YomiFooter } from "@/components/layout/YomiFooter";
@@ -29,9 +30,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "https://yomi-reader.vercel.app"
-  ),
+  metadataBase: new URL(siteUrl),
   title: {
     default: "YOMI — Leitor de Mangás, Manhwas e Webtoons",
     template: "%s | YOMI",

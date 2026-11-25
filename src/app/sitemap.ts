@@ -1,24 +1,17 @@
 import type { MetadataRoute } from "next";
+import { siteUrl } from "@/lib/siteUrl";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://yomi-reader.vercel.app";
-
   const routes = [
     "",
     "/download",
     "/instalar",
     "/explorar",
-    "/conta",
-    "/conta/backup",
     "/privacidade",
     "/termos",
   ];
 
   return routes.map((route) => ({
-    url: `${baseUrl}${route}`,
-    lastModified: new Date(),
-    changeFrequency: route === "/download" ? "daily" : "weekly",
-    priority: route === "" ? 1.0 : 0.8,
+    url: new URL(route || "/", siteUrl).href,
   }));
 }

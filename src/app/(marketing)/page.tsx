@@ -1,4 +1,5 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { fetchLatestYomiRelease } from '@/lib/github/releases';
 import {
   CURATED_POPULAR_WORKS,
@@ -7,6 +8,10 @@ import {
 import { LoggedInHomeHub } from '@/components/landing/LoggedInHomeHub';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
+};
 
 export default async function HomePage() {
   const latestRelease = await fetchLatestYomiRelease(fetch, { noStore: true });
