@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Share2 } from 'lucide-react';
-import { BlobatarCompanion } from '@/components/brand/BlobatarCompanion';
+import { BlobatarCompanion, resolveMascotHue } from '@/components/brand/BlobatarCompanion';
 import { resolveMangaEntryCoverUrl } from '@/lib/mangadex/api';
 import type { ReaderMetrics } from '@/lib/backup/readerMetrics';
 import type { YomiProfile } from '@/lib/backup/kuroCodec';
@@ -29,7 +29,8 @@ async function loadImage(src?: string | null) {
 }
 
 async function createImage(props: Props, story: boolean, mascot: SVGSVGElement) {
-  const { metrics, name, rank, accent, avatar } = props;
+  const { metrics, profile, name, rank, accent, avatar } = props;
+  const hue = resolveMascotHue(profile.blobatarHue, accent);
   const canvas = document.createElement('canvas');
   const width = 360, height = story ? 640 : 360;
   canvas.width = width * 3;
@@ -50,7 +51,7 @@ async function createImage(props: Props, story: boolean, mascot: SVGSVGElement) 
     ctx.scale(3, 3);
     const gradient = ctx.createLinearGradient(0, 0, width, height);
     gradient.addColorStop(0, '#111124');
-    gradient.addColorStop(1, /^#[0-9a-f]{6}$/i.test(accent) ? accent + '77' : '#6c244b');
+    gradient.addColorStop(1, hue === undefined ? '#6c244b' : `hsl(${hue}, 48%, 34%)`);
     ctx.fillStyle = '#0B0B15';
     ctx.fillRect(0, 0, width, height);
     ctx.fillStyle = gradient;
@@ -112,6 +113,15 @@ async function createImage(props: Props, story: boolean, mascot: SVGSVGElement) 
 
 export function ReaderMetricsSection(props: Props) {
   const {metrics, profile} = props;
+  const mascotProps = {
+    context: 'profile' as const,
+    accentColor: props.accent,
+    hue: profile.blobatarHue,
+    shape: profile.blobatarShape,
+    expression: profile.blobatarExpression,
+    mascotName: profile.blobatarName,
+    background: false,
+  };
   const dialog = useRef<HTMLDialogElement>(null);
   const mascot = useRef<HTMLDivElement>(null);
   const [story, setStory] = useState(true);
@@ -154,7 +164,10 @@ export function ReaderMetricsSection(props: Props) {
   const fileName = story ? 'yomi-resumo-stories.png' : 'yomi-resumo-feed.png';
   return <section className="space-y-5 rounded-3xl border border-white/10 bg-[#0E0E14] p-5 sm:p-7">
     <header className="flex flex-wrap items-center justify-between gap-3">
-      <h2 className="text-xl font-bold">Métricas do Leitor</h2>
+      <div className="flex items-center gap-3">
+        <BlobatarCompanion {...mascotProps} size={60} animated={profile.blobatarAnimated !== false} />
+        <h2 className="text-xl font-bold">Métricas do Leitor</h2>
+      </div>
       <button type="button" onClick={openPreview} className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-black"><Share2 size={16}/> Compartilhar Resumo Mensal</button>
     </header>
     <h3 className="text-sm font-semibold text-white/70">Todo o histórico</h3>
@@ -179,7 +192,7 @@ export function ReaderMetricsSection(props: Props) {
           if (story !== value) { setError(''); setAsset(undefined); setStory(Boolean(value)); }
         }}>{label}</button>)}</div>
       {open && <div ref={mascot} className="pointer-events-none absolute opacity-0" aria-hidden="true">
-        <BlobatarCompanion size={160} accentColor={accent} hue={profile.blobatarHue} shape={profile.blobatarShape} expression={profile.blobatarExpression} mascotName={profile.blobatarName} background={false} animated={false} interactiveCycle={false} followPointer={false} />
+        <BlobatarCompanion {...mascotProps} size={180} animated={false} interactiveCycle={false} followPointer={false} />
       </div>}
       {asset?.story === story ? <>
         {/* eslint-disable-next-line @next/next/no-img-element */}

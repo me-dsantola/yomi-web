@@ -49,6 +49,12 @@ function hexToHue(hex?: string): number | undefined {
   return Math.round((h * 60 + 360) % 360);
 }
 
+export function resolveMascotHue(hue?: number, accentColor?: string) {
+  return typeof hue === 'number' && Number.isFinite(hue) && hue >= 0
+    ? hue % 360
+    : hexToHue(accentColor);
+}
+
 export const BLOBATAR_SHAPES: Array<{
   id: string;
   label: string;
@@ -114,7 +120,7 @@ export function BlobatarCompanion({name,mascotName,hue,accentColor,shape='auto',
   const [cycleOffset,setCycleOffset]=useState<number|null>(null);
   const themePreset=useReaderStore(s=>s.themePreset);
   const displayName=mascotName||name||'Kuro';
-  const effectiveHue=hue??hexToHue(accentColor)??(themePreset==='crimson'?undefined:THEME_HUE_MAP[themePreset]);
+  const effectiveHue=resolveMascotHue(hue,accentColor)??(themePreset==='crimson'?undefined:THEME_HUE_MAP[themePreset]);
   const pixelSize=typeof size==='number'?size:size==='sm'?64:size==='lg'?112:80;
   const framed=darkContainer??(background==='squircle'||background===true);
   const ids:Record<string,string>={idle:'neutre',happy:'heureux',love:'heureux',wink:'heureux',smug:'fier',surprised:'surpris',thinking:'attentif',shy:'timide',sleepy:'somnolent',sad:'triste',mad:'colere',unsure:'curieux',scared:'effraye',sick:'confus'};

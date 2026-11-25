@@ -460,6 +460,7 @@ export default function ContaDashboardPage() {
                       animated={cloudState?.profile?.blobatarAnimated !== false}
                       chaptersRead={readChaptersCount}
                       accentColor={profileAccent}
+                      hue={cloudState.profile.blobatarHue}
                       mascotName={cloudState.mascotName}
                       expression={cloudState.profile.blobatarExpression}
                       shape={cloudState.profile.blobatarShape}
@@ -1003,6 +1004,7 @@ export default function ContaDashboardPage() {
                 mascotName={editMascotName || 'Kuro'}
                 expression={editExpression}
                 accentColor={argbIntToHex(editAccentArgb)}
+                hue={cloudState?.profile.blobatarHue}
                 size={68}
                 interactiveCycle={false}
               />
