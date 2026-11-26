@@ -1,6 +1,6 @@
 {
   "name": "yomi-web",
-  "version": "1.4.6",
+  "version": "1.4.7",
   "private": true,
   "description": "Site oficial do leitor YOMI para Android e Web.",
   "scripts": {
@@ -27,7 +27,7 @@
     "react-markdown": "^9.0.3",
     "rehype-sanitize": "^6.0.0",
     "tailwind-merge": "^3.0.1",
-    "zod": "^3.24.2",
+    "zod": "^4.6.7",
     "zustand": "^5.0.3"
   },
   "devDependencies": {
@@ -37,6 +37,12 @@
     "@types/react-dom": "^19.0.3",
     "tailwindcss": "^4.0.7",
     "typescript": "^5.7.3",
-    "vitest": "^3.0.6"
+    "vitest": "^4.1.12"
+  },
+  "overrides": {
+    "@firebase/firestore": {
+      "@grpc/grpc-js": "1.14.7"
+    },
+    "postcss": "8.5.33"
   }
 }

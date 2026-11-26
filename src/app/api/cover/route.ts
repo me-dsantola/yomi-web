@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "URL inválida" }, { status: 400 });
   }
 
-  if (parsed.protocol !== "https:" || !ALLOWED_IMAGE_HOSTS.has(parsed.hostname)) {
+  if (parsed.protocol !== "https:" || parsed.port || parsed.username || parsed.password || !ALLOWED_IMAGE_HOSTS.has(parsed.hostname)) {
     return NextResponse.json(
       { error: "Domínio de capa não autorizado" },
       { status: 403 }
@@ -38,6 +38,8 @@ export async function GET(request: NextRequest) {
   for (const candidate of [parsed.toString(), fallbackWpUrl]) {
     try {
       const upstream = await fetch(candidate, {
+        redirect: "error",
+        signal: AbortSignal.timeout(12000),
         headers: {
           "User-Agent": "YOMI-Web/1.2.11",
           Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
@@ -46,10 +48,12 @@ export async function GET(request: NextRequest) {
       });
 
       if (upstream.ok) {
-        const buffer = await upstream.arrayBuffer();
-        const contentType =
-          upstream.headers.get("content-type") || "image/jpeg";
-        return new NextResponse(buffer, {
+        const contentType = upstream.headers.get("content-type")?.split(";")[0].trim().toLowerCase();
+        if (!contentType || !/^image\/(jpeg|png|gif|webp|avif|apng)$/.test(contentType)) {
+          await upstream.body?.cancel();
+          continue;
+        }
+        return new NextResponse(upstream.body, {
           status: 200,
           headers: {
             "Content-Type": contentType,

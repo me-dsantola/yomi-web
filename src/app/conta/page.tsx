@@ -11,7 +11,7 @@ import {
   BookOpen,
   Clock,
   Cloud,
-  Edit3, Settings, Share2,
+  Edit3, Settings,
   Eye,
   FolderHeart,
   HardDriveDownload,
@@ -71,7 +71,6 @@ export default function ContaDashboardPage() {
   const queryClient = useQueryClient();
 
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [shareLink, setShareLink] = useState('');
   const [media,setMedia] = useState<{uid:string;avatar?:string;banner?:string}>({uid:''});
   const originals: {avatar?:string;banner?:string} = user && media.uid === user.uid ? media : {};
   const [demoMode, setDemoMode] = useState(false);
@@ -500,21 +499,7 @@ export default function ContaDashboardPage() {
 
               <div className="flex items-center gap-4">
                 <button aria-label="Configurações do perfil" aria-expanded={settingsOpen} onClick={() => setSettingsOpen(!settingsOpen)} className="rounded-full border border-white/15 p-2.5"><Settings size={18}/></button>
-                <button className="inline-flex items-center gap-2 text-sm" onClick={async () => {
-                  const url = new URL('/perfil', window.location.origin);
-                  url.hash = new URLSearchParams({
-                    nome: (cloudState.profile.name || 'Leitor Yomi').slice(0,80),
-                    bio: (cloudState.profile.bio || '').slice(0,240),
-                    cor: profileAccent,
-                  }).toString();
-                  setShareLink(url.href);
-                  try {
-                    if (navigator.share) await navigator.share({title:'Perfil Yomi Reader', url:url.href});
-                    else { await navigator.clipboard.writeText(url.href); setFeedback('Link do perfil copiado.'); }
-                  } catch { /* Link available for manual copy. */ }
-                }}><Share2 size={16}/> Compartilhar perfil</button>
               </div>
-              {shareLink && <label className="text-xs text-white/65">Link com nome, bio e cor atuais <input readOnly value={shareLink} onFocus={e => e.target.select()} className="rounded bg-white/10 p-2" /></label>}
               {/* Actions */}
               <div style={{display:settingsOpen ? undefined : 'none'}} className="flex flex-wrap items-center justify-center gap-2.5">
                 <button

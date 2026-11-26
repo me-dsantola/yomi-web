@@ -40,7 +40,7 @@ export default function TermosPage() {
             2. Conteúdo de Terceiros e Direitos Autorais
           </h2>
           <p>
-            O YOMI <strong>não hospeda nem distribui arquivos de obras em servidores próprios</strong>. Metadados e páginas vêm em tempo real do{" "}
+            Para carregar obras, o YOMI consulta fontes externas e pode intermediar e armazenar temporariamente imagens em cache. Uma das fontes utilizadas é o{" "}
             <a
               href="https://mangadex.org"
               target="_blank"

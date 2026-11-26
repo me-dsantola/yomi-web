@@ -6,7 +6,7 @@ import { ShieldCheck } from "lucide-react";
 export const metadata: Metadata = {
   title: "Política de Privacidade (LGPD)",
   description:
-    "Política de Privacidade, cookies e proteção de dados pessoais do YOMI em conformidade com a LGPD.",
+    "Política de Privacidade, cookies e proteção de dados pessoais do YOMI.",
 };
 
 export default function PrivacidadePage() {
@@ -62,7 +62,7 @@ export default function PrivacidadePage() {
             4. Isolamento e Segurança
           </h2>
           <p>
-            Os dados em nuvem ficam isolados por usuário autenticado. Ao sair da conta, os tokens locais são removidos do dispositivo.
+            A biblioteca pessoal é sincronizada pelo Firebase. Comentários ficam visíveis a outros leitores. Ao conectar o Google Drive, você pode guardar backups e imagens na pasta privada do aplicativo. O resumo mensal reúne sua identificação, mascote e estatísticas de leitura em uma imagem que você escolhe com quem compartilhar.
           </p>
         </section>
 
@@ -80,7 +80,7 @@ export default function PrivacidadePage() {
             >
               MangaDex
             </a>
-            , sem envio dos seus dados pessoais a terceiros.
+            . Ao carregar imagens diretamente, os provedores recebem informações técnicas da conexão, como o endereço IP.
           </p>
         </section>
 
@@ -93,7 +93,7 @@ export default function PrivacidadePage() {
             <Link href="/conta/backup" className="text-[var(--yomi-accent)] underline">
               Backups
             </Link>{" "}
-            ou excluir seus dados diretamente pela sua conta.
+            e excluir seus próprios comentários no local de publicação. A exportação reúne os dados da biblioteca e do perfil.
           </p>
         </section>
       </div>
