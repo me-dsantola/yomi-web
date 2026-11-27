@@ -1,6 +1,8 @@
 'use client';
+import {useProfileAccent} from '@/components/profile/useProfileAccent';
 
 import React, { useMemo, useState } from 'react';
+import {BANNERS, MASCOT_HUES, portableImage, profileBanner} from '@/lib/kuro/appearance';
 import Link from 'next/link';
 import { ReaderMetricsSection } from '@/components/profile/ReaderMetricsSection';
 import { calculateReaderMetrics } from '@/lib/backup/readerMetrics';
@@ -36,7 +38,6 @@ import {
 } from '@/lib/firebase/cloudSync';
 import { getDemoCloudDocument } from '@/lib/firebase/demoFixture';
 import {
-  argbIntToHex,
   type YomiMangaEntry,
   type YomiReadingList,
 } from '@/lib/backup/kuroCodec';
@@ -46,23 +47,43 @@ import {
 } from '@/lib/mangadex/api';
 import {
   BLOBATAR_EXPRESSIONS,
-  BLOBATAR_SHAPES,
+  BLOBATAR_SHAPES, profileFrame,
   BlobatarCompanion,
 } from '@/components/brand/BlobatarCompanion';
 
-function profileBanner(path?: string) {
-  const preset = path?.replace(/^preset:/, '') || 'horizonte_distante';
-  return ['horizonte_distante', 'lua_vermelha', 'portal_da_noite'].includes(preset)
-    ? '/brand/banners/' + preset + '.webp'
-    : null;
-}
-
 const ACCENT_SWATCHES = [
-  { hex: '#FF2A55', argb: 0xffff2a55, label: 'Carmesim' },
-  { hex: '#8B5CF6', argb: 0xff8b5cf6, label: 'Violeta' },
-  { hex: '#06B6D4', argb: 0xff06b6d4, label: 'Ciano' },
-  { hex: '#10B981', argb: 0xff10b981, label: 'Esmeralda' },
-  { hex: '#F59E0B', argb: 0xfff59e0b, label: 'Âmbar' },
+  { hex: '#FF2A55', argb: 0xffFF2A55, label: 'Carmesim' },
+  { hex: '#E11D48', argb: 0xffE11D48, label: 'YOMI Ensō Red' },
+  { hex: '#EF4444', argb: 0xffEF4444, label: 'Carmim Vivo' },
+  { hex: '#F34884', argb: 0xffF34884, label: 'Carmesim Destaque' },
+  { hex: '#A11743', argb: 0xffA11743, label: 'Carmesim Profundo' },
+  { hex: '#F43F5E', argb: 0xffF43F5E, label: 'Coral Rosado' },
+  { hex: '#F472B6', argb: 0xffF472B6, label: 'Sakura Pink' },
+  { hex: '#EC4899', argb: 0xffEC4899, label: 'Magenta Neon' },
+  { hex: '#DB2777', argb: 0xffDB2777, label: 'Fúcsia Intenso' },
+  { hex: '#CB48FF', argb: 0xffCB48FF, label: 'Roxo Nebulosa' },
+  { hex: '#8B5CF6', argb: 0xff8B5CF6, label: 'Violeta Suave' },
+  { hex: '#6518BA', argb: 0xff6518BA, label: 'Nebulosa Profundo' },
+  { hex: '#6366F1', argb: 0xff6366F1, label: 'Índigo' },
+  { hex: '#A78BFA', argb: 0xffA78BFA, label: 'Lavanda' },
+  { hex: '#35BCFF', argb: 0xff35BCFF, label: 'Azul Noturno Destaque' },
+  { hex: '#02A9FF', argb: 0xff02A9FF, label: 'Azul Celeste' },
+  { hex: '#0954C8', argb: 0xff0954C8, label: 'Azul Noturno Profundo' },
+  { hex: '#2563EB', argb: 0xff2563EB, label: 'Safira Real' },
+  { hex: '#38BDF8', argb: 0xff38BDF8, label: 'Céu Claro' },
+  { hex: '#22D3EE', argb: 0xff22D3EE, label: 'Aqua Brilhante' },
+  { hex: '#06B6D4', argb: 0xff06B6D4, label: 'Ciano Oceânico' },
+  { hex: '#14B8A6', argb: 0xff14B8A6, label: 'Turquesa' },
+  { hex: '#42E691', argb: 0xff42E691, label: 'Verde Esmeralda Destaque' },
+  { hex: '#078052', argb: 0xff078052, label: 'Verde Esmeralda Profundo' },
+  { hex: '#10B981', argb: 0xff10B981, label: 'Menta Fresco' },
+  { hex: '#84CC16', argb: 0xff84CC16, label: 'Lima Neon' },
+  { hex: '#F59E0B', argb: 0xffF59E0B, label: 'Âmbar Quente' },
+  { hex: '#FB923C', argb: 0xffFB923C, label: 'Tangerina' },
+  { hex: '#FBBF24', argb: 0xffFBBF24, label: 'Dourado Imperial' },
+  { hex: '#9893AA', argb: 0xff9893AA, label: 'Cinza Grafite Destaque' },
+  { hex: '#64748B', argb: 0xff64748B, label: 'Ardósia' },
+  { hex: '#94A3B8', argb: 0xff94A3B8, label: 'Platina' },
 ];
 
 export default function ContaDashboardPage() {
@@ -85,11 +106,17 @@ export default function ContaDashboardPage() {
   const [editBio, setEditBio] = useState('');
   const [editGenres, setEditGenres] = useState('');
   const [editMascotName, setEditMascotName] = useState('');
+  const [editHue, setEditHue] = useState<number | null>(null);
+  const [editAvatarPath,setEditAvatarPath] = useState('');
+  const [editBannerPath,setEditBannerPath] = useState('');
+  const [editSeed, setEditSeed] = useState('');
+  const [editFrame, setEditFrame] = useState('circle');
+  const [editTouch, setEditTouch] = useState(true);
   const [editShape,setEditShape] = useState('auto');
   const [editAnimated,setEditAnimated] = useState(true);
   const [editUseMascot,setEditUseMascot] = useState(true);
   const [editExpression, setEditExpression] = useState('happy');
-  const [editAccentArgb, setEditAccentArgb] = useState(0xffff2a55);
+  const [editAccentArgb, setEditAccentArgb] = useState<number | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
 
   // Create collection inline state
@@ -115,6 +142,8 @@ export default function ContaDashboardPage() {
     enabled: Boolean(user) || demoMode,
   });
 
+  const profileAccent = useProfileAccent(cloudState?.profile, portableImage(cloudState?.profile.avatarImagePath) || cloudState?.avatarDataUrl, profileBanner(cloudState?.profile.bannerImagePath) || cloudState?.bannerDataUrl);
+  const previewAccent = useProfileAccent({...cloudState?.profile, name:editName, blobatarSeed:editSeed, blobatarHue:editHue, useBlobatarAsAvatar:editUseMascot, customAccentColor:editAccentArgb}, isEditOpen ? portableImage(editAvatarPath) || cloudState?.avatarDataUrl : null, isEditOpen ? profileBanner(editBannerPath) || cloudState?.bannerDataUrl : null);
   const showNotice = (msg: string) => {
     setFeedback(msg);
     setTimeout(() => {
@@ -134,11 +163,17 @@ export default function ContaDashboardPage() {
     setEditBio(p?.bio || '');
     setEditGenres(p?.favoriteGenre || 'Ação, Fantasia & Seinen');
     setEditMascotName(p?.blobatarName || cloudState?.mascotName || 'Kuro');
+    setEditHue(p?.blobatarHue ?? null);
+    setEditAvatarPath(p?.avatarImagePath || '');
+    setEditBannerPath(p?.bannerImagePath || '');
+    setEditSeed(p?.blobatarSeed ?? '');
+    setEditTouch(p?.blobatarInteractive !== false);
+    setEditFrame(p?.blobatarBackground || 'circle');
     setEditShape(p?.blobatarShape || 'auto');
     setEditAnimated(p?.blobatarAnimated !== false);
     setEditUseMascot(p?.useBlobatarAsAvatar ?? !cloudState?.avatarDataUrl);
     setEditExpression(p?.blobatarExpression || 'happy');
-    setEditAccentArgb(p?.customAccentColor ?? 0xffff2a55);
+    setEditAccentArgb(p?.customAccentColor ?? null);
     setIsEditOpen(true);
   };
 
@@ -148,6 +183,12 @@ export default function ContaDashboardPage() {
       openAuthModal('login');
       return;
     }
+    for (const [value, previous] of [[editAvatarPath, cloudState?.profile.avatarImagePath], [editBannerPath, cloudState?.profile.bannerImagePath]]) {
+      if (value && value !== previous && !portableImage(value) && !BANNERS.some(b=>b.id===value)) {
+        showNotice('Use um endereço HTTPS para a imagem.');
+        return;
+      }
+    }
     setSavingProfile(true);
     try {
       await updateCloudUserProfile(user.uid, user.email, {
@@ -156,6 +197,9 @@ export default function ContaDashboardPage() {
         favoriteGenre: editGenres.trim() || 'Ação, Fantasia & Seinen',
         blobatarName: editMascotName.trim() || 'Kuro',
         blobatarExpression: editExpression,
+        avatarImagePath:editAvatarPath, bannerImagePath:editBannerPath,
+        blobatarHue: editHue, blobatarSeed: editSeed.trim(),
+        blobatarBackground: editFrame, blobatarInteractive: editTouch,
         blobatarShape:editShape, blobatarAnimated:editAnimated, useBlobatarAsAvatar:editUseMascot,
         customAccentColor: editAccentArgb,
       });
@@ -332,12 +376,12 @@ export default function ContaDashboardPage() {
     );
   }
 
-  const profileAccent = cloudState?.profile?.customAccentColor
-    ? argbIntToHex(cloudState.profile.customAccentColor)
-    : '#FF2A55';
 
+  const channels = [1,3,5].map(i=>parseInt(profileAccent.slice(i,i+2),16)/255)
+    .map(c=>c<=.04045 ? c/12.92 : ((c+.055)/1.055)**2.4);
+  const onAccent = channels[0]*.2126 + channels[1]*.7152 + channels[2]*.0722 > .179 ? '#08080b' : '#fff';
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 pt-28 sm:pt-32 pb-20 space-y-8">
+    <div style={{ "--yomi-accent": profileAccent, "--profile-on-accent": onAccent } as React.CSSProperties} className="mx-auto max-w-6xl px-4 sm:px-6 pt-28 sm:pt-32 pb-20 space-y-8">
       {/* Demo Banner */}
       {demoMode && !user && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-purple-500/30 bg-purple-500/10 px-5 py-3 text-xs text-purple-200">
@@ -434,8 +478,8 @@ export default function ContaDashboardPage() {
             <div
               className="h-48 sm:h-56 w-full bg-cover bg-center relative"
               style={{
-                backgroundImage: (originals.banner || cloudState.bannerDataUrl || profileBanner(cloudState.profile.bannerImagePath))
-                  ? `url(${originals.banner || cloudState.bannerDataUrl || profileBanner(cloudState.profile.bannerImagePath)})`
+                backgroundImage: (profileBanner(cloudState.profile.bannerImagePath) || originals.banner || cloudState.bannerDataUrl || BANNERS[0].src)
+                  ? `url(${profileBanner(cloudState.profile.bannerImagePath) || originals.banner || cloudState.bannerDataUrl || BANNERS[0].src})`
                   : `radial-gradient(circle at 20% 30%, ${profileAccent}44, #141424 60%, #070709)`,
               }}
             >
@@ -444,11 +488,11 @@ export default function ContaDashboardPage() {
 
             <div className="px-6 sm:px-8 pb-6 -mt-14 relative z-10 flex flex-col items-center gap-5 text-center">
               <div className="flex flex-col items-center gap-3">
-                {(originals.avatar || cloudState.avatarDataUrl) &&
+                {(portableImage(cloudState.profile.avatarImagePath) || originals.avatar || cloudState.avatarDataUrl) &&
                 !cloudState.profile.useBlobatarAsAvatar ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={originals.avatar || cloudState.avatarDataUrl || undefined}
+                    src={portableImage(cloudState.profile.avatarImagePath) || originals.avatar || cloudState.avatarDataUrl || undefined}
                     alt={cloudState.profile.name || 'Avatar'}
                     className="h-28 w-28 rounded-full border-4 border-[#0E0E14] object-cover shadow-xl"
                   />
@@ -459,7 +503,7 @@ export default function ContaDashboardPage() {
                       animated={cloudState?.profile?.blobatarAnimated !== false}
                       chaptersRead={readChaptersCount}
                       accentColor={profileAccent}
-                      hue={cloudState.profile.blobatarHue}
+                      hue={cloudState.profile.blobatarHue ?? undefined} seed={cloudState.profile.blobatarSeed || cloudState.profile.name} background={profileFrame(cloudState.profile.blobatarBackground)} interactiveCycle={cloudState.profile.blobatarInteractive !== false}
                       mascotName={cloudState.mascotName}
                       expression={cloudState.profile.blobatarExpression}
                       shape={cloudState.profile.blobatarShape}
@@ -565,7 +609,7 @@ export default function ContaDashboardPage() {
 
           {metrics && <ReaderMetricsSection metrics={metrics} profile={cloudState.profile}
             name={cloudState.profile.name || 'Leitor Yomi'} rank={getReaderRankInfo(metrics.chapters).title}
-            avatar={cloudState.profile.useBlobatarAsAvatar ? null : originals.avatar || cloudState.avatarDataUrl}
+            avatar={cloudState.profile.useBlobatarAsAvatar ? null : portableImage(cloudState.profile.avatarImagePath) || originals.avatar || cloudState.avatarDataUrl}
             accent={profileAccent} />}
 
           {/* Reader Rank + Favorite Genres Row */}
@@ -677,7 +721,7 @@ export default function ContaDashboardPage() {
                   }
                   setIsNewListOpen((v) => !v);
                 }}
-                className="inline-flex items-center gap-1.5 rounded-full bg-[var(--yomi-accent)] px-4 py-2 text-xs font-semibold text-white hover:brightness-110 transition"
+                className="inline-flex items-center gap-1.5 rounded-full bg-[var(--yomi-accent)] px-4 py-2 text-xs font-semibold text-[color:var(--profile-on-accent)] hover:brightness-110 transition"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Nova Coleção
@@ -869,7 +913,7 @@ export default function ContaDashboardPage() {
                     <button
                       type="submit"
                       disabled={savingList}
-                      className="rounded-full bg-[var(--yomi-accent)] px-4 py-1.5 text-xs font-semibold text-white hover:brightness-110 disabled:opacity-50"
+                      className="rounded-full bg-[var(--yomi-accent)] px-4 py-1.5 text-xs font-semibold text-[color:var(--profile-on-accent)] hover:brightness-110 disabled:opacity-50"
                     >
                       {savingList ? 'Salvando...' : 'Criar Coleção'}
                     </button>
@@ -988,10 +1032,10 @@ export default function ContaDashboardPage() {
                 shape={editShape}
                 mascotName={editMascotName || 'Kuro'}
                 expression={editExpression}
-                accentColor={argbIntToHex(editAccentArgb)}
-                hue={cloudState?.profile.blobatarHue}
+                accentColor={previewAccent}
+                hue={editHue ?? undefined} seed={editSeed.trim() || editName} background={profileFrame(editFrame)}
                 size={68}
-                interactiveCycle={false}
+                interactiveCycle={editTouch}
               />
               <div className="min-w-0">
                 <div className="font-display text-sm font-bold text-white truncate">
@@ -1081,6 +1125,7 @@ export default function ContaDashboardPage() {
                   Cor de Destaque do Perfil
                 </label>
                 <div className="flex flex-wrap gap-2.5">
+                  <button type="button" aria-pressed={editAccentArgb === null} onClick={()=>setEditAccentArgb(null)} className="rounded-full border px-3 py-1.5 aria-pressed:border-white">Adaptar à foto ou ao banner</button>
                   {ACCENT_SWATCHES.map((swatch) => {
                     const selected = editAccentArgb === swatch.argb;
                     return (
@@ -1106,6 +1151,35 @@ export default function ContaDashboardPage() {
                 </div>
               </div>
 
+              <fieldset className="space-y-3">
+                <legend>Cor do Kuro</legend>
+                <button className="rounded-lg border p-2" type="button" onClick={()=>{
+                  const pick = <T,>(items:T[])=>items[Math.floor(Math.random()*items.length)];
+                  setEditHue(pick(MASCOT_HUES)); setEditShape(pick(BLOBATAR_SHAPES.slice(1)).id); setEditExpression(pick(BLOBATAR_EXPRESSIONS).id);
+                }}>Sortear aparência</button>
+                <div className="flex gap-2">
+                  <button type="button" aria-pressed={editHue === null} className="rounded-lg border p-2 aria-pressed:border-[var(--yomi-accent)]" onClick={() => setEditHue(null)}>Automática pela semente</button>
+                  <button type="button" aria-pressed={editHue === -1} className="rounded-lg border p-2 aria-pressed:border-[var(--yomi-accent)]" onClick={() => setEditHue(-1)}>Acompanhar o perfil</button>
+                </div>
+                <div className="flex flex-wrap gap-2">{MASCOT_HUES.map(h => <button key={h} type="button" aria-label={`Matiz ${h} graus`} aria-pressed={editHue === h} onClick={() => setEditHue(h)} className="size-8 rounded-full aria-pressed:ring-2 ring-white" style={{backgroundColor: `hsl(${h} 65% 65%)`}} />)}</div>
+                <label className="block">Matiz personalizada {editHue != null && editHue >= 0 && `· ${editHue}°`}<input type="range" min="0" max="360" value={editHue != null && editHue >= 0 ? editHue : 0} onChange={e => setEditHue(Number(e.target.value))} className="block w-full" /></label>
+                <label className="block">Semente do mascote <input className="rounded bg-zinc-900 p-2" value={editSeed} onChange={e=>setEditSeed(e.target.value)} /></label>
+                <label className="block">Moldura <select className="rounded bg-zinc-900 p-2" value={editFrame} onChange={e=>setEditFrame(e.target.value)}>{Object.entries({circle:'Círculo',squircle:'Cantos arredondados',square:'Quadrado',none:'Livre'}).map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
+                <label><input type="checkbox" checked={editTouch} onChange={e=>setEditTouch(e.target.checked)} /> Reagir ao toque</label>
+              </fieldset>
+              <label className="block">Banner do perfil
+                <select className="block rounded bg-zinc-900 p-2" value={BANNERS.some(b=>b.id===editBannerPath)?editBannerPath:''} onChange={e=>setEditBannerPath(e.target.value)}>
+                  <option value="">Imagem personalizada</option>{BANNERS.map(b=><option key={b.id} value={b.id}>{b.title}</option>)}
+                </select>
+              </label>
+              {profileBanner(editBannerPath) && <img alt="Prévia do banner" src={profileBanner(editBannerPath)} className="h-24 w-full rounded-lg object-cover" />}
+              <label className="block">URL da foto <input type="text" inputMode="url" className="block w-full rounded bg-zinc-900 p-2" value={editAvatarPath} onChange={e=>{setEditAvatarPath(e.target.value);setEditUseMascot(false);}} /></label>
+              {!editBannerPath.startsWith('preset:') && <label className="block">URL do banner <input type="text" inputMode="url" className="block w-full rounded bg-zinc-900 p-2" value={editBannerPath} onChange={e=>setEditBannerPath(e.target.value)} /></label>}
+              {cloudState?.favorites.length ? <details><summary>Usar capa da biblioteca</summary><div className="max-h-52 overflow-auto">{cloudState.favorites.map(m=>{
+                const cover=new URL(resolveMangaEntryCoverUrl(m),window.location.origin);
+                const src=portableImage(cover.searchParams.get('url') || cover.href);
+                return src && <div key={m.id} className="flex items-center gap-3 py-1"><span className="flex-1">{m.title}</span><button type="button" onClick={()=>{setEditAvatarPath(src);setEditUseMascot(false);}}>Foto</button><button type="button" onClick={()=>setEditBannerPath(src)}>Banner</button></div>;
+              })}</div></details> : null}
               <label className="block text-sm">Silhueta do mascote
                 <select className="ml-3 rounded-lg bg-zinc-900 p-2" value={editShape} onChange={e=>setEditShape(e.target.value)}>{BLOBATAR_SHAPES.map(s=><option key={s.id} value={s.id}>{s.label}</option>)}</select>
               </label>
@@ -1122,7 +1196,7 @@ export default function ContaDashboardPage() {
                 <button
                   type="submit"
                   disabled={savingProfile}
-                  className="rounded-full bg-[var(--yomi-accent)] px-6 py-2 text-xs font-semibold text-white hover:brightness-110 disabled:opacity-50"
+                  className="rounded-full bg-[var(--yomi-accent)] px-6 py-2 text-xs font-semibold text-[color:var(--profile-on-accent)] hover:brightness-110 disabled:opacity-50"
                 >
                   {savingProfile ? 'Salvando...' : 'Salvar Perfil'}
                 </button>

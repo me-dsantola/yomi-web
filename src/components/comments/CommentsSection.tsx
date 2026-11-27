@@ -31,6 +31,7 @@ import {
   type YomiComment,
 } from '@/lib/firebase/comments';
 import type { ParsedYomiCloudState } from '@/lib/firebase/cloudSync';
+import {mascotHex,resolveMascotHue} from '@/lib/kuro/appearance';
 import { argbIntToHex } from '@/lib/backup/kuroCodec';
 import { EMPTY_EQUIPMENT } from '@/lib/kuro/cosmetics';
 import { BlobatarCompanion } from '@/components/brand/BlobatarCompanion';
@@ -150,11 +151,10 @@ export function CommentsSection({
       user.uid,
     ]);
     const profile = cloud?.profile;
+    const hue=resolveMascotHue(profile?.blobatarHue, profile?.customAccentColor ? argbIntToHex(profile.customAccentColor) : undefined, profile?.blobatarSeed || profile?.name);
     return {
       userPhotoUrl: user.photoURL ?? null,
-      mascotColorId: profile?.customAccentColor
-        ? argbIntToHex(profile.customAccentColor)
-        : undefined,
+      mascotColorId: hue === undefined ? undefined : mascotHex(hue),
       mascotExpressionId: profile?.blobatarExpression || undefined,
       mascotShapeId: profile?.blobatarShape || undefined,
     };
@@ -680,7 +680,7 @@ export function CommentsSection({
                   <div className="flex items-center gap-3 min-w-0">
                     <BlobatarCompanion
                       equipment={EMPTY_EQUIPMENT}
-                      seed={comment.userName}
+                      hue={comment.mascotColorId ? -1 : undefined} seed={comment.userName}
                       mascotName={comment.userName}
                       accentColor={comment.mascotColorId}
                       expression={comment.mascotExpressionId || 'happy'}

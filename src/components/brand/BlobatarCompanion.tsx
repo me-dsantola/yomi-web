@@ -31,29 +31,8 @@ const THEME_HUE_MAP: Record<YomiThemePreset, number> = {
   emerald: 156,
 };
 
-function hexToHue(hex?: string): number | undefined {
-  if (!hex || !hex.startsWith('#')) return undefined;
-  const clean = hex.slice(1);
-  if (clean.length !== 6) return undefined;
-  const r = parseInt(clean.slice(0, 2), 16) / 255;
-  const g = parseInt(clean.slice(2, 4), 16) / 255;
-  const b = parseInt(clean.slice(4, 6), 16) / 255;
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const d = max - min;
-  if (d === 0) return undefined;
-  let h = 0;
-  if (max === r) h = ((g - b) / d) % 6;
-  else if (max === g) h = (b - r) / d + 2;
-  else h = (r - g) / d + 4;
-  return Math.round((h * 60 + 360) % 360);
-}
-
-export function resolveMascotHue(hue?: number, accentColor?: string) {
-  return typeof hue === 'number' && Number.isFinite(hue) && hue >= 0
-    ? hue % 360
-    : hexToHue(accentColor);
-}
+import {resolveMascotHue} from '@/lib/kuro/appearance';
+export {profileFrame, resolveMascotHue} from '@/lib/kuro/appearance';
 
 export const BLOBATAR_SHAPES: Array<{
   id: string;
@@ -98,7 +77,7 @@ export interface BlobatarCompanionProps {
   name?: string;
   mascotName?: string;
   seed?: string;
-  hue?: number;
+  hue?: number | null;
   accentColor?: string;
   shape?: string;
   background?: boolean | 'circle' | 'square' | 'squircle';
@@ -116,13 +95,13 @@ export interface BlobatarCompanionProps {
 }
 
 /** Compatibility wrapper: saved Blobatar preferences keep their existing IDs. */
-export function BlobatarCompanion({name,mascotName,hue,accentColor,shape='auto',background='squircle',darkContainer,expression='happy',size=76,followPointer=true,interactiveCycle=true,className,context,animated=true,loading=false,equipment}:BlobatarCompanionProps) {
+export function BlobatarCompanion({name,mascotName,seed,hue,accentColor,shape='auto',background='squircle',darkContainer,expression='happy',size=76,followPointer=true,interactiveCycle=true,className,context,animated=true,loading=false,equipment}:BlobatarCompanionProps) {
   const [cycleOffset,setCycleOffset]=useState<number|null>(null);
   const themePreset=useReaderStore(s=>s.themePreset);
   const displayName=mascotName||name||'Kuro';
-  const effectiveHue=resolveMascotHue(hue,accentColor)??(themePreset==='crimson'?undefined:THEME_HUE_MAP[themePreset]);
+  const effectiveHue=resolveMascotHue(hue,accentColor,seed)??(themePreset==='crimson'?undefined:THEME_HUE_MAP[themePreset]);
   const pixelSize=typeof size==='number'?size:size==='sm'?64:size==='lg'?112:80;
-  const framed=darkContainer??(background==='squircle'||background===true);
+  const framed=darkContainer??(background!==false);
   const ids:Record<string,string>={idle:'neutre',happy:'heureux',love:'heureux',wink:'heureux',smug:'fier',surprised:'surpris',thinking:'attentif',shy:'timide',sleepy:'somnolent',sad:'triste',mad:'colere',unsure:'curieux',scared:'effraye',sick:'confus'};
   const shapes:Record<string,string>={auto:'cercle',round:'cercle',organic:'galet',boxy:'squircle',capsule:'capsule',nub:'goutte',cloud:'nuage',droplet:'goutte',hexagon:'hexagone',sun:'cercle',triangle:'triangle'};
   const selected=cycleOffset===null?expression:BLOBATAR_EXPRESSIONS[cycleOffset%BLOBATAR_EXPRESSIONS.length].id;
@@ -132,7 +111,7 @@ export function BlobatarCompanion({name,mascotName,hue,accentColor,shape='auto',
     onKeyDown={e=>{if(interactiveCycle&&(e.key==='Enter'||e.key===' ')){e.preventDefault();tap();}}}
     aria-label={`Mascote ${displayName}${interactiveCycle?' — toque para interagir':''}`} title={displayName}
     className={cn('relative inline-flex items-center justify-center rounded-3xl',framed&&'border border-white/12 bg-[#101529]',interactiveCycle&&'cursor-pointer',className)}
-    style={{width:pixelSize,height:pixelSize}}>
+    style={{width:pixelSize,height:pixelSize,borderRadius:background==='circle'?'50%':background==='square'?0:undefined}}>
       <YomiBloubCompanion size={pixelSize} shape={shapes[shape]??'cercle'} expression={ids[selected]??'attentif'} hue={effectiveHue} equipment={equipment}
         follow={followPointer&&pixelSize>=64} paused={!animated||pixelSize<48} loading={loading}
         context={context??(pixelSize>=74?'profile':'reader')} label={`Mascote ${displayName}`} />

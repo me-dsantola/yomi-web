@@ -1,4 +1,5 @@
 'use client';
+import {useProfileAccent} from '@/components/profile/useProfileAccent';
 
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -82,13 +83,11 @@ export function YomiNavbar({ latestVersion = '1.2.11' }: YomiNavbarProps) {
     user?.email?.split('@')[0] ||
     'Leitor YOMI';
 
+  const customAccentHex = useProfileAccent(cloudState?.profile, cloudState?.avatarDataUrl, cloudState?.bannerDataUrl);
   const hasCustomAvatarPhoto = Boolean(
     cloudState?.avatarDataUrl && !cloudState?.profile?.useBlobatarAsAvatar
   );
 
-  const customAccentHex = cloudState?.profile?.customAccentColor
-    ? argbIntToHex(cloudState.profile.customAccentColor)
-    : undefined;
 
   const mascotName =
     cloudState?.mascotName || cloudState?.profile?.blobatarName || 'Kuro';
@@ -350,7 +349,7 @@ export function YomiNavbar({ latestVersion = '1.2.11' }: YomiNavbarProps) {
                       <div className="h-7 w-7 rounded-full overflow-hidden flex items-center justify-center shrink-0">
                         <BlobatarCompanion
                           mascotName={mascotName}
-                          seed={cloudState?.profile?.blobatarSeed}
+                          hue={cloudState?.profile?.blobatarHue} seed={cloudState?.profile?.blobatarSeed || cloudState?.profile?.name}
                           expression={blobatarExpression}
                           shape={blobatarShape}
                           accentColor={customAccentHex}
@@ -384,7 +383,7 @@ export function YomiNavbar({ latestVersion = '1.2.11' }: YomiNavbarProps) {
                           <div className="h-8 w-8 rounded-full overflow-hidden flex items-center justify-center shrink-0">
                             <BlobatarCompanion
                               mascotName={mascotName}
-                              seed={cloudState?.profile?.blobatarSeed}
+                              hue={cloudState?.profile?.blobatarHue} seed={cloudState?.profile?.blobatarSeed || cloudState?.profile?.name}
                               expression={blobatarExpression}
                               shape={blobatarShape}
                               accentColor={customAccentHex}

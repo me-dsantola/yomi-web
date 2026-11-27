@@ -30,7 +30,7 @@ async function loadImage(src?: string | null) {
 
 async function createImage(props: Props, story: boolean, mascot: SVGSVGElement) {
   const { metrics, profile, name, rank, accent, avatar } = props;
-  const hue = resolveMascotHue(profile.blobatarHue, accent);
+  const hue = resolveMascotHue(profile.blobatarHue, accent, profile.blobatarSeed || profile.name);
   const canvas = document.createElement('canvas');
   const width = 360, height = story ? 640 : 360;
   canvas.width = width * 3;
@@ -116,10 +116,12 @@ export function ReaderMetricsSection(props: Props) {
   const mascotProps = {
     context: 'profile' as const,
     accentColor: props.accent,
+    seed: profile.blobatarSeed || profile.name,
     hue: profile.blobatarHue,
     shape: profile.blobatarShape,
     expression: profile.blobatarExpression,
     mascotName: profile.blobatarName,
+    interactiveCycle: profile.blobatarInteractive !== false,
     background: false,
   };
   const dialog = useRef<HTMLDialogElement>(null);

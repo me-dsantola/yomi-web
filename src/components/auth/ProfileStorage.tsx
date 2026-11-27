@@ -133,7 +133,7 @@ export function ProfileStorage({ user, state, refresh, onMedia }: Props) {
     await updateCloudUserProfile(
       user.uid,
       user.email,
-      slot === 'avatar' ? { useBlobatarAsAvatar: false } : {},
+      slot === 'avatar' ? { useBlobatarAsAvatar: false, avatarImagePath:'' } : {bannerImagePath:''},
       { slot, base64: small.split(',')[1] },
     );
     } catch (error) {

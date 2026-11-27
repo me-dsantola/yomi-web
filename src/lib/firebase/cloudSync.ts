@@ -1,3 +1,4 @@
+import {portableImage, profileBanner} from '@/lib/kuro/appearance';
 import {
   doc,
   getDoc,
@@ -298,8 +299,8 @@ export function parseRawCloudDocData(
     rawPayload,
     backup,
     profile,
-    avatarDataUrl: avatarBase64 ? `data:image/${mediaFormat(avatarBase64)};base64,${avatarBase64}` : null,
-    bannerDataUrl: bannerBase64 ? `data:image/${mediaFormat(bannerBase64)};base64,${bannerBase64}` : null,
+    avatarDataUrl: portableImage(profile.avatarImagePath) || (avatarBase64 ? `data:image/${mediaFormat(avatarBase64)};base64,${avatarBase64}` : null),
+    bannerDataUrl: profileBanner(profile.bannerImagePath) || (bannerBase64 ? `data:image/${mediaFormat(bannerBase64)};base64,${bannerBase64}` : null),
     favorites,
     recentReads,
     readingLists,

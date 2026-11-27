@@ -71,8 +71,8 @@ export interface YomiProfile {
   blobatarExpression?: string;
   blobatarBackground?: string;
   avatarIndex?: number;
-  customAccentColor?: number;
-  blobatarHue?: number;
+  customAccentColor?: number | null;
+  blobatarHue?: number | null;
   openOnProfileByDefault?: boolean;
   isConfigured?: boolean;
   useBlobatarAsAvatar?: boolean;

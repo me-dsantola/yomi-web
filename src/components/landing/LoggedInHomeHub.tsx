@@ -1,4 +1,5 @@
 'use client';
+import {useProfileAccent} from '@/components/profile/useProfileAccent';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -149,6 +150,7 @@ export function LoggedInHomeHub({
     [cloudState, showcaseWorks]
   );
 
+  const profileAccent = useProfileAccent(cloudState?.profile, cloudState?.avatarDataUrl, cloudState?.bannerDataUrl);
   const filteredDiscoveryWorks = useMemo(() => {
     if (discoveryGenre === 'Todos') {
       return recommendations.discoveryWorks.slice(0, 5);
@@ -200,9 +202,6 @@ export function LoggedInHomeHub({
     user.email?.split('@')[0] ||
     'Leitor';
 
-  const profileAccent = cloudState?.profile?.customAccentColor
-    ? argbIntToHex(cloudState.profile.customAccentColor)
-    : undefined;
 
   const hasCustomAvatar = Boolean(
     cloudState?.avatarDataUrl && !cloudState?.profile?.useBlobatarAsAvatar
@@ -338,7 +337,7 @@ export function LoggedInHomeHub({
                       context="welcome"
                       animated={cloudState?.profile?.blobatarAnimated !== false}
                       mascotName={cloudState?.mascotName || 'Kuro'}
-                      seed={cloudState?.profile?.blobatarSeed}
+                      hue={cloudState?.profile?.blobatarHue} seed={cloudState?.profile?.blobatarSeed || cloudState?.profile?.name}
                       expression={cloudState?.profile?.blobatarExpression}
                       shape={cloudState?.profile?.blobatarShape}
                       accentColor={profileAccent}
